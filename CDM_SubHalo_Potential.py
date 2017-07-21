@@ -3,31 +3,9 @@ from __future__ import division
 import numpy as np
 from scipy import special
 from numpy import log, exp, sin ,cos, pi, log10, sqrt
-from scipy.integrate import quad, dblquad, cumtrapz
-from matplotlib import pyplot as plt
+from integrator import trapz2d
 
-def trapz2d(z,x = None,y = None):
-    ''' Integrates a regularly spaced 2D grid using the composite trapezium rule. 
-    IN:
-       z : 2D array
-       x : (optional) grid values for x (1D array)
-       y : (optional) grid values for y (1D array)
-       dx: if x is not supplied, set it to the x grid interval
-       dy: if y is not supplied, set it to the x grid interval
-    '''
-    
-    sum = np.sum
-    dx = (x[-1]-x[0])/(np.shape(x)[0]-1)
-    dy = (y[-1]-y[0])/(np.shape(y)[0]-1)    
-    
-    s1 = z[0,0] + z[-1,0] + z[0,-1] + z[-1,-1]
-    s2 = sum(z[1:-1,0]) + sum(z[1:-1,-1]) + sum(z[0,1:-1]) + sum(z[-1,1:-1])
-    s3 = sum(z[1:-1,1:-1])
-    
-    return 0.25*dx*dy*(s1 + 2*s2 + 4*s3)
-
-
-crit_density = 1.5*10**-7; 
+crit_density = 1.3211775*10**-7; 
 f = 0.1;
 p = 1.9;
 c = 10.0;
@@ -109,7 +87,7 @@ def SubHaloTidalForce(r, M, D):
 def TidalVariance(D, N):
     func = lambda m, r: 10**(m+r)*10**(2*r) * Nhalo(10**m, D) * SubHaloTidalForce(10**r, 10**m, D)**2
     M = np.linspace(-2, log10(f*Mprimary), num = N)
-    R = np.linspace(-2, log10(D/2), num = N)
+    R = np.linspace(0, log10(D/2), num = N)
     Z = np.empty((N, N), dtype=object)
     for i in range(N):
         for j in range(N):
@@ -153,19 +131,6 @@ def NormedFourierMagInt(D, N):
 	ans = trapz2d(Z, M, R)
 	return ans*4*pi/phi * log(10)**2 * sqrt(gravParam/D**3)/sqrt(phi/3)
 	
-def main():
-    ep = np.linspace(2,9,10)
-    D = np.linspace(0, 5, 20)
-    F = map(lambda x: log10(Fluc(10**x, int(2**6))), D)
-    plt.plot(D, F)
-    plt.xlabel('log(r/pc)')
-    plt.ylabel('log(Normalized Tidal Variance)')
-    plt.show()
-    
-    
-    
-if __name__ == "__main__":
-    main()
 
     
 

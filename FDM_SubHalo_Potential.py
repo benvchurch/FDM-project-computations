@@ -3,31 +3,13 @@ from __future__ import division
 import numpy as np
 from scipy import special
 from numpy import log, exp, sin ,cos, pi, log10, sqrt
-from scipy.integrate import quad, dblquad, cumtrapz
-from matplotlib import pyplot as plt
+from integrator import trapz2d
 
-def trapz2d(z,x = None,y = None):
-    ''' Integrates a regularly spaced 2D grid using the composite trapezium rule. 
-    IN:
-       z : 2D array
-       x : (optional) grid values for x (1D array)
-       y : (optional) grid values for y (1D array)
-       dx: if x is not supplied, set it to the x grid interval
-       dy: if y is not supplied, set it to the x grid interval
-    '''
-    
-    sum = np.sum
-    dx = (x[-1]-x[0])/(np.shape(x)[0]-1)
-    dy = (y[-1]-y[0])/(np.shape(y)[0]-1)    
-    
-    s1 = z[0,0] + z[-1,0] + z[0,-1] + z[-1,-1]
-    s2 = sum(z[1:-1,0]) + sum(z[1:-1,-1]) + sum(z[0,1:-1]) + sum(z[-1,1:-1])
-    s3 = sum(z[1:-1,1:-1])
-    
-    return 0.25*dx*dy*(s1 + 2*s2 + 4*s3)
+import cosmolopy
+import hmf_module_sharpk as modhmf
+import hmf_module_sharpk_analyt as modhmf_a
 
-
-crit_density = 1.5*10**-7 
+crit_density = 1.3211775*10**-7 
 f = 0.1
 p = 1.9
 c = 10.0
@@ -38,7 +20,7 @@ m22 = 10**3
 ksol = 9.1*10**-2
 
 def cuttoff(axion_mass):
-	return 10**8.7 * pow(axion_mass, -3/2)
+    return 10**8.7 * pow(axion_mass, -3/2)
 
 def MaxRadius(M):
     return pow(3*M/(4 * pi * 200 * crit_density), 1/3)
@@ -102,7 +84,7 @@ def MFree(r, M):
     elif(r < Rmax):
         return SolitonMassProfile(r, M) + MFreeNFW(r, M) - MFreeNFW(R12, M) + 4/3*pi*R12**3*NFWProfile(R12, M) 
     else:
-		return SolitonMassProfile(Rmax, M) + MFreeNFW(Rmax, M) - MFreeNFW(R12, M) + 4/3*pi*R12**3*NFWProfile(R12, M)
+        return SolitonMassProfile(Rmax, M) + MFreeNFW(Rmax, M) - MFreeNFW(R12, M) + 4/3*pi*R12**3*NFWProfile(R12, M)
 
 def TidalRadius(m, R):
     Rt = R*pow(m/(2*MFreeNFW(R, Mprimary)), 1/3)
@@ -120,7 +102,7 @@ def NumericTruncate(m, R):
 def MSubHalo(r, M, D):
     Rt = TidalRadius(M, D)
     if(r < Rt):
-		return MFree(r, M)
+        return MFree(r, M)
     else:
         return MFree(Rt, M)
 
@@ -139,8 +121,27 @@ def SubHaloTidalForce(r, M, D):
         else:
             return 2*G*MSubHalo(r, M, D)/r**3  
 
-def Nhalo(m, R):
+def HMF_FDM(M):
+    rho_c = 2.7755536e11
+    cosmo = {'N_nu': 0, 'h': 0.696, 'omega_M_0': 0.284, 'omega_b_0': 0.045, 'omega_lambda_0': 0.716, 'omega_n_0': 0, 'n': 0.962, 'sigma_8': 0.818, 'm22':1.}
+    deltac = 1.686
+    k = np.logspace(-3,4,4000)
+    R = np.linspace(1, pow(M/(4*np.pi*rho_c*cosmo['omega_M_0']*cosmo['h']**2/3.0),1/3.0),2)
+    Rks = R/2.5
+    Mks = 4*np.pi*Rks**3*rho_c*cosmo['omega_M_0']*cosmo['h']**2/3.0
+    z = 0.
+    ppp = cosmolopy.perturbation.power_spectrum(k,z,**cosmo)
+    sigg = modhmf.signumvec_unnorm(k,Rks,ppp)
+    ddd = modhmf_a.dlnsigmabydlnm(Rks,sigg,z,**cosmo)
+    return (3*modhmf.fitfunc_ST(sigg,deltac*1.195)*ddd/(4*np.pi*R**3))[1]/M
+
+
+def NhaloCDM(m, R):
     return pow(m, -p)*NFWProfile(R, Mprimary)*(2-p)*pow(f,p-1)*pow(Mprimary, p-2)
+
+def Nhalo(m, R):
+    return NFWProfile(R, Mprimary)*(2-p)*pow(f,p-1)*pow(Mprimary, -2)*HMF_FDM(m)/HMF_FDM(Mprimary)
+
 
 def HaloDensity(R):
     return quad(lambda x: Truncate(x, R) * Nhalo(x, R), 0, f*Mprimary)[0]
@@ -151,7 +152,7 @@ def PotChange(m, R, r):
 def TidalVariance(D, N):
     func = lambda m, r: 10**(m+r)*10**(2*r) * Nhalo(10**m, D) * SubHaloTidalForce(10**r, 10**m, D)**2
     M = np.linspace(log10(cuttoff(m22)), log10(f*Mprimary), num = N)
-    R = np.linspace(-2, log10(D/2), num = N)
+    R = np.linspace(0, log10(D/2), num = N)
     Z = np.empty((N, N), dtype=object)
     for i in range(N):
         for j in range(N):
@@ -173,7 +174,7 @@ def Fluc(D, N):
     return ans*4*pi*(-PhiFreeNFW(D, Mprimary)/3) * log(10)**2    
 
 def NormalizedFluc(D, N):
-	return sqrt(Fluc(D, N)/(PhiFreeNFW(D, Mprimary)**2 *4*pi*MFreeNFW(D, Mprimary)/D**3))
+    return sqrt(Fluc(D, N)/(PhiFreeNFW(D, Mprimary)**2 *4*pi*MFreeNFW(D, Mprimary)/D**3))
 
 def FourierF(k):
     return sqrt(2/pi) * special.kv(0, abs(k))
@@ -195,19 +196,7 @@ def NormedFourierMagInt(D, N):
     ans = trapz2d(Z, M, R)
     return ans*4*pi/phi * log(10)**2 * sqrt(gravParam/D**3)/sqrt(phi/3)
 
-def main():
-    ep = np.linspace(2,9,10)
-    D = np.linspace(0, 5, 40)
-    F = map(lambda x: log10(NormalizedFluc(10**2, int(2**x))), ep)
-    plt.plot(ep, F)
-    plt.xlabel('log(r/pc)')
-    plt.ylabel('log(Normalized Potential Fluctuation)')
-    plt.show()
-    
-    
-    
-if __name__ == "__main__":
-    main()
+
 
     
 
