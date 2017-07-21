@@ -34,10 +34,11 @@ c = 10.0
 G = 0.0045
 k = 2
 Mprimary = 10**12
-m22 = 1
+m22 = 10**3
 ksol = 9.1*10**-2
-cuttoff = 5*10**8
 
+def cuttoff(axion_mass):
+	return 10**8.7 * pow(axion_mass, -3/2)
 
 def MaxRadius(M):
     return pow(3*M/(4 * pi * 200 * crit_density), 1/3)
@@ -91,14 +92,17 @@ def RhoFree(r, M):
         else:
             return SolitonProfile(r, M) + NFWProfile(R12, M)
     else:
-        return SolitonProfile(r, M)
+        return 0
         
 def MFree(r, M):
     R12 = HalfSolitonRadius(M)
+    Rmax = MaxRadius(M)
     if(r < R12):
         return SolitonMassProfile(r, M) + 4/3*pi*r**3 * NFWProfile(R12, M)
-    else:
+    elif(r < Rmax):
         return SolitonMassProfile(r, M) + MFreeNFW(r, M) - MFreeNFW(R12, M) + 4/3*pi*R12**3*NFWProfile(R12, M) 
+    else:
+		return SolitonMassProfile(Rmax, M) + MFreeNFW(Rmax, M) - MFreeNFW(R12, M) + 4/3*pi*R12**3*NFWProfile(R12, M)
 
 def TidalRadius(m, R):
     Rt = R*pow(m/(2*MFreeNFW(R, Mprimary)), 1/3)
@@ -116,7 +120,7 @@ def NumericTruncate(m, R):
 def MSubHalo(r, M, D):
     Rt = TidalRadius(M, D)
     if(r < Rt):
-            return MFree(r, M)
+		return MFree(r, M)
     else:
         return MFree(Rt, M)
 
@@ -146,7 +150,7 @@ def PotChange(m, R, r):
 
 def TidalVariance(D, N):
     func = lambda m, r: 10**(m+r)*10**(2*r) * Nhalo(10**m, D) * SubHaloTidalForce(10**r, 10**m, D)**2
-    M = np.linspace(log10(cuttoff), log10(f*Mprimary), num = N)
+    M = np.linspace(log10(cuttoff(m22)), log10(f*Mprimary), num = N)
     R = np.linspace(-2, log10(D/2), num = N)
     Z = np.empty((N, N), dtype=object)
     for i in range(N):
@@ -158,7 +162,7 @@ def TidalVariance(D, N):
 
 def Fluc(D, N):
     func = lambda m, r: 10**(m+r)*10**(2*r)  * Nhalo(10**m, D) * PotChange(10**m, D, 10**r)**2
-    M = np.linspace(log10(cuttoff), log10(f*Mprimary), num = N)
+    M = np.linspace(log10(cuttoff(m22)), log10(f*Mprimary), num = N)
     R = np.linspace(-1, log10(D/2), num = N)
     Z = np.empty((N, N), dtype=object)
     for i in range(N):
@@ -169,7 +173,7 @@ def Fluc(D, N):
     return ans*4*pi*(-PhiFreeNFW(D, Mprimary)/3) * log(10)**2    
 
 def NormalizedFluc(D, N):
-    return sqrt(Fluc(D, N)/(PhiFreeNFW(D, Mprimary)**2 *4*pi*MFreeNFW(D, Mprimary)/D**3))
+	return sqrt(Fluc(D, N)/(PhiFreeNFW(D, Mprimary)**2 *4*pi*MFreeNFW(D, Mprimary)/D**3))
 
 def FourierF(k):
     return sqrt(2/pi) * special.kv(0, abs(k))
@@ -181,7 +185,7 @@ def NormedFourierMagInt(D, N):
     gravParam = MFreeNFW(D, Mprimary)*G
     phi = -PhiFreeNFW(D, Mprimary)
     func = lambda m, r: 10**(m+r)*10**(2*r)  * Nhalo(10**m, D) * MSubHalo(10**r, 10**m, D)*G/sqrt(2*pi) * FourierIntegral((10**r)*sqrt(gravParam/D**3)/sqrt(phi/3))
-    M = np.linspace(log10(cuttoff), log10(f*Mprimary), num = N)
+    M = np.linspace(log10(cuttoff(m22)), log10(f*Mprimary), num = N)
     R = np.linspace(-1, log10(D/2), num = N)
     Z = np.empty((N, N), dtype=object)
     for i in range(N):
@@ -191,21 +195,13 @@ def NormedFourierMagInt(D, N):
     ans = trapz2d(Z, M, R)
     return ans*4*pi/phi * log(10)**2 * sqrt(gravParam/D**3)/sqrt(phi/3)
 
-def FlucQ(D, N):
-    func = lambda m, r: 10**(m+r)*10**(2*r)  * Nhalo(10**m, D) * PotChange(10**m, D, 10**r)**2
-    m1,m2 = 0, log10(f*Mprimary)
-    r1,r2 = lambda m: 0, lambda m: log10(D/2)
-    ans, err = dblquad(func, m1, m2, r1, r2, epsabs = 10**-20)
-    print err , ans
-    return ans*4*pi*(-PhiFreeNFW(D, Mprimary)/3) * log(10)**2  
-
 def main():
     ep = np.linspace(2,9,10)
     D = np.linspace(0, 5, 40)
-    F = map(lambda x: log10(NormedFourierMagInt(10**x, int(2**7))), D)
-    plt.plot(D, F)
+    F = map(lambda x: log10(NormalizedFluc(10**2, int(2**x))), ep)
+    plt.plot(ep, F)
     plt.xlabel('log(r/pc)')
-    plt.ylabel('log(Normalized Tidal Variance)')
+    plt.ylabel('log(Normalized Potential Fluctuation)')
     plt.show()
     
     
@@ -213,19 +209,5 @@ def main():
 if __name__ == "__main__":
     main()
 
-    
-@np.vectorize
-def fu(r, m):
-    D = 10**0
-    return r**2  * Nhalo(m, D) * PotChange(m, D, r)**2
-
-def Tester():
-    r = np.linspace(0.0001, 0.005, 100)
-    m = np.linspace(0.1, 10, 100)
-    X,Y = np.meshgrid(r, m) # grid of point
-    Z = fu(X, Y) # evaluation of the function on the grid
-    cp = plt.contourf(X, Y, Z, 100)
-    plt.colorbar(cp) # adding the colobar on the right
-    plt.show()
     
 

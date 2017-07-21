@@ -152,19 +152,11 @@ def NormedFourierMagInt(D, N):
 			
 	ans = trapz2d(Z, M, R)
 	return ans*4*pi/phi * log(10)**2 * sqrt(gravParam/D**3)/sqrt(phi/3)
-
-def FlucQ(D, N):
-    func = lambda m, r: 10**(m+r)*10**(2*r)  * Nhalo(10**m, D) * PotChange(10**m, D, 10**r)**2
-    m1,m2 = 0, log10(f*Mprimary)
-    r1,r2 = lambda m: 0, lambda m: log10(D/2)
-    ans, err = dblquad(func, m1, m2, r1, r2, epsabs = 10**-20)
-    print err , ans
-    return ans*4*pi*(-PhiFreeNFW(D, Mprimary)/3) * log(10)**2  
-
+	
 def main():
     ep = np.linspace(2,9,10)
     D = np.linspace(0, 5, 20)
-    F = map(lambda x: log10(Fluc(10**x, int(2**7))), D)
+    F = map(lambda x: log10(Fluc(10**x, int(2**6))), D)
     plt.plot(D, F)
     plt.xlabel('log(r/pc)')
     plt.ylabel('log(Normalized Tidal Variance)')
@@ -175,19 +167,5 @@ def main():
 if __name__ == "__main__":
     main()
 
-    
-@np.vectorize
-def fu(r, m):
-    D = 10**0
-    return r**2  * Nhalo(m, D) * PotChange(m, D, r)**2
-
-def Tester():
-    r = np.linspace(0.0001, 0.005, 100)
-    m = np.linspace(0.1, 10, 100)
-    X,Y = np.meshgrid(r, m) # grid of point
-    Z = fu(X, Y) # evaluation of the function on the grid
-    cp = plt.contourf(X, Y, Z, 100)
-    plt.colorbar(cp) # adding the colobar on the right
-    plt.show()
     
 
