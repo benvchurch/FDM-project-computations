@@ -4,6 +4,7 @@ import numpy as np
 from scipy import special
 from numpy import log, exp, sin ,cos, pi, log10, sqrt
 from integrator import trapz2d
+from mpmath import meijerg
 
 import cosmolopy
 import hmf_module_sharpk as modhmf
@@ -16,10 +17,10 @@ c = 10.0
 G = 0.0045
 k = 2
 Mprimary = 10**12
-m22 = 10**3
-ksol = 9.1*10**-2
+m22 = 1
+ksol = 2.2944716 * 10**12
 
-def cuttoff(axion_mass):
+def cutoff(axion_mass):
     return 10**8.7 * pow(axion_mass, -3/2)
 
 def MaxRadius(M):
@@ -29,18 +30,19 @@ MpriMax = MaxRadius(Mprimary)
 def SolitonMass(M):
     return 2.7 * 10**8 / m22 * pow(M/10**10, 1/3)
     
-def HalfSolitonRadius(M):
-    return 33*pi**2/(1024*pow(ksol, 3/2)) * 1.9*10**10 / SolitonMass(M) * m22**-2
+def SolitonRadius(M):
+    return 33*pi**2/1024 * ksol/ SolitonMass(M) * m22**-2
 
 def SolitonProfile(r, M):
     Msol = SolitonMass(M)
-    R12 = HalfSolitonRadius(M)
-    return (1.9*10**10) * m22**-2 * (1/R12)**4/(1+ksol*(r/R12)**2)**8
+    R = SolitonRadius(M)
+    return ksol * m22**-2 * (1/R)**4/(1+(r/R)**2)**8
 
 def SolitonMassProfile(r, M):
     Msol = SolitonMass(M)
-    R = HalfSolitonRadius(M)/sqrt(ksol)
-    return Msol * np.arctan(r/R) * 2/pi + Msol/(3465*pi/2*(R**2+r**2)**7)*(3465*R*r**13 + 23100*R**3*r**11 + 65373*R**5*r**9 + 101376*R**7*r**7 + 92323*R**9*r**5 + 48580*R**11*r**3 - 3465*R**13*r)    
+    R = SolitonRadius(M)
+    u = r/R
+    return Msol * np.arctan(u) * 2/pi + Msol/(3465*pi/2*(1+u**2)**7)*(3465*u**13 + 23100*u**11 + 65373*u**9 + 101376*u**7 + 92323*u**5 + 48580*u**3 - 3465*u)    
         
 def NFWProfile(r, M):
     Rmax = MaxRadius(M)
@@ -67,7 +69,7 @@ def PhiFreeNFW(r, M):
         return -M*G/r
 
 def RhoFree(r, M):
-    R12 = HalfSolitonRadius(M)
+    R = SolitonRadius(M)
     if(r < MaxRadius(M)):
         if(r < R12):
             return SolitonProfile(r, M) + NFWProfile(r, M)
@@ -77,7 +79,7 @@ def RhoFree(r, M):
         return 0
         
 def MFree(r, M):
-    R12 = HalfSolitonRadius(M)
+    R = SolitonRadius(M)
     Rmax = MaxRadius(M)
     if(r < R12):
         return SolitonMassProfile(r, M) + 4/3*pi*r**3 * NFWProfile(R12, M)
@@ -108,7 +110,7 @@ def MSubHalo(r, M, D):
 
 def TidalLimit(M):
     Msol = SolitonMass(M)
-    R = HalfSolitonRadius(M)/sqrt(ksol)
+    R = SolitonRadius(M)
     return -2*Msol*G/R**3 * (48580/3465 - 1/3 + 7) * 2/pi + 4/3*pi*NFWProfile(R*sqrt(ksol), M)*2*G - 4*pi*G*RhoFree(0,M)
     
 def SubHaloTidalForce(r, M, D):
@@ -121,26 +123,32 @@ def SubHaloTidalForce(r, M, D):
         else:
             return 2*G*MSubHalo(r, M, D)/r**3  
 
+HMF_Memoized = dict()
+
+
 def HMF_FDM(M):
-    rho_c = 2.7755536e11
-    cosmo = {'N_nu': 0, 'h': 0.696, 'omega_M_0': 0.284, 'omega_b_0': 0.045, 'omega_lambda_0': 0.716, 'omega_n_0': 0, 'n': 0.962, 'sigma_8': 0.818, 'm22':1.}
-    deltac = 1.686
-    k = np.logspace(-3,4,4000)
-    R = np.linspace(1, pow(M/(4*np.pi*rho_c*cosmo['omega_M_0']*cosmo['h']**2/3.0),1/3.0),2)
-    Rks = R/2.5
-    Mks = 4*np.pi*Rks**3*rho_c*cosmo['omega_M_0']*cosmo['h']**2/3.0
-    z = 0.
-    ppp = cosmolopy.perturbation.power_spectrum(k,z,**cosmo)
-    sigg = modhmf.signumvec_unnorm(k,Rks,ppp)
-    ddd = modhmf_a.dlnsigmabydlnm(Rks,sigg,z,**cosmo)
-    return (3*modhmf.fitfunc_ST(sigg,deltac*1.195)*ddd/(4*np.pi*R**3))[1]/M
+	if(not ((M, m22) in HMF_Memoized)):
+		rho_c = 2.7755536e11 #msol/Mpc^-3 h^2
+		cosmo = {'N_nu': 0, 'h': 0.696, 'omega_M_0': 0.284, 'omega_b_0': 0.045, 'omega_lambda_0': 0.716, 'omega_n_0': 0, 'n': 0.962, 'sigma_8': 0.818, 'm22':m22}
+		deltac = 1.686
+		k = np.logspace(-3,4,4000)
+		R = np.linspace(1, pow(M/(4*np.pi*rho_c*cosmo['omega_M_0']*cosmo['h']**2/3.0),1/3.0),2)
+		Rks = R/2.5
+		Mks = 4*np.pi*Rks**3*rho_c*cosmo['omega_M_0']*cosmo['h']**2/3.0
+		z = 0.
+		ppp = cosmolopy.perturbation.power_spectrum(k,z,**cosmo)
+		sigg = modhmf.signumvec_unnorm(k,Rks,ppp)
+		ddd = modhmf_a.dlnsigmabydlnm(Rks,sigg,z,**cosmo)
+		HMF_Memoized[(M, m22)] =  (3*modhmf.fitfunc_ST(sigg,deltac*1.195)*ddd/(4*np.pi*R**3))[1]/M
+	return HMF_Memoized[(M, m22)]
 
 
 def NhaloCDM(m, R):
     return pow(m, -p)*NFWProfile(R, Mprimary)*(2-p)*pow(f,p-1)*pow(Mprimary, p-2)
 
+
 def Nhalo(m, R):
-    return NFWProfile(R, Mprimary)*(2-p)*pow(f,p-1)*pow(Mprimary, -2)*HMF_FDM(m)/HMF_FDM(Mprimary)
+	return NFWProfile(R, Mprimary)*(2-p)*pow(f,p-1)*pow(Mprimary, -2)*HMF_FDM(m)/HMF_FDM(Mprimary)
 
 
 def HaloDensity(R):
@@ -185,7 +193,8 @@ def FourierIntegral(k):
 def NormedFourierMagInt(D, N):
     gravParam = MFreeNFW(D, Mprimary)*G
     phi = -PhiFreeNFW(D, Mprimary)
-    func = lambda m, r: 10**(m+r)*10**(2*r)  * Nhalo(10**m, D) * MSubHalo(10**r, 10**m, D)*G/sqrt(2*pi) * FourierIntegral((10**r)*sqrt(gravParam/D**3)/sqrt(phi/3))
+    #change the power of mass
+    func = lambda m, r: 10**(m+r)*10**(2*r)  * Nhalo(10**m, D) * MSubHalo(10**r, 10**m, D) *G * FourierIntegral((10**r)*sqrt(gravParam/D**3)/sqrt(phi/3))
     M = np.linspace(log10(cuttoff(m22)), log10(f*Mprimary), num = N)
     R = np.linspace(-1, log10(D/2), num = N)
     Z = np.empty((N, N), dtype=object)
@@ -196,6 +205,27 @@ def NormedFourierMagInt(D, N):
     ans = trapz2d(Z, M, R)
     return ans*4*pi/phi * log(10)**2 * sqrt(gravParam/D**3)/sqrt(phi/3)
 
+    
+def SqFourierIntegral(k):
+	if(k < 10):
+		return sqrt(pi)/4*(5.568327996831708 - float(meijerg([[1],[1]],[[1/2,1/2,1/2], [0]],k,1/2)))/k
+	else:
+		return 0
+
+def IntegSpectralPower(D, N):
+    gravParam = MFreeNFW(D, Mprimary)*G
+    phi = -PhiFreeNFW(D, Mprimary)
+    #change the power of mass
+    func = lambda m, r: 10**(m+r)*10**(2*r)  * Nhalo(10**m, D) * (MSubHalo(10**r, 10**m, D))**2 * SqFourierIntegral((10**r)*sqrt(gravParam/D**3)/sqrt(phi/3))
+    M = np.linspace(log10(cuttoff(m22)), log10(f*Mprimary), num = N)
+    R = np.linspace(-1, log10(D/2), num = N)
+    Z = np.empty((N, N), dtype=object)
+    for i in range(N):
+        for j in range(N):
+            Z[i,j] = func(M[i], R[j])
+            
+    ans = trapz2d(Z, M, R)
+    return ans*4*pi/phi**2 * log(10)**2 * (gravParam/D**3)/(phi/3) * G**2
 
 
     

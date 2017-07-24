@@ -14,10 +14,10 @@ import FDM_SubHalo_Potential
 p = 2
 
 #num plot points
-num = 100
+num = 50
 
-#fluc, normedfluc, fourierfluc, tidalvar 
-var = "normedfluc"
+#fluc, normedfluc, fourierfluc, sqfourierfluc,tidalvar 
+var = "sqfourierfluc"
 
 #calc, test
 mode = "calc"
@@ -44,7 +44,7 @@ params = {
 plt.rcParams.update(params)
 
 
-ep = np.logspace(2, p, num)
+ep = np.logspace(1, p, num)
 D = np.logspace(0, 5, num)
 
 if(var == "fluc"):
@@ -53,6 +53,8 @@ elif(var == "normedfluc"):
 	CDMfunc = CDM_SubHalo_Potential.NormalizedFluc
 elif(var == "fourierfluc"):
 	CDMfunc = CDM_SubHalo_Potential.NormedFourierMagInt
+elif(var == "sqfourierfluc"):
+	CDMfunc = CDM_SubHalo_Potential.IntegSpectralPower
 elif(var == "tidalvar"):
 	CDMfunc = CDM_SubHalo_Potential.TidalVariance
 
@@ -68,6 +70,8 @@ elif(var == "normedfluc"):
 	FDMfunc = FDM_SubHalo_Potential.NormalizedFluc
 elif(var == "fourierfluc"):
 	FDMfunc = FDM_SubHalo_Potential.NormedFourierMagInt
+elif(var == "sqfourierfluc"):
+	FDMfunc = FDM_SubHalo_Potential.IntegSpectralPower
 elif(var == "tidalvar"):
 	FDMfunc = FDM_SubHalo_Potential.TidalVariance
 		
@@ -86,7 +90,7 @@ def main():
 	lines.append(plt.loglog(D, CDM_Calculate(), label = '$CDM$', linestyle = '--'))
 	print "done CDM in " + str(time.time() - t)
 	
-	log_axion_masses = [4,3,2,1,0,-1]
+	log_axion_masses = [6,4,2,1,0,-1]
 	for logm in log_axion_masses:
 		
 		t = time.time()
@@ -99,7 +103,9 @@ def main():
 	elif(var == "normedfluc"):
 		plt.ylabel(r'$ \left < \left (\frac{\partial \phi}{\partial t} \right )^2 \right > \left (\frac{\Omega}{\phi} \right )^2$')
 	elif(var == "fourierfluc"):
-		plt.ylabel(r'\[\int_{\Omega}^{\infty} \tilde{\phi}(\omega) d\omega \]')
+		plt.ylabel(r'\[ \frac{1}{\phi} \int_{\Omega}^{\infty} | \tilde{\phi}(\omega) | d\omega \]')
+	elif(var == "sqfourierfluc"):
+		plt.ylabel(r'\[ \frac{\Omega}{\phi^2} \int_{\Omega}^{\infty} | \tilde{\phi}(\omega) |^2 d\omega \]')
 	elif(var == "tidalvar"):
 		plt.ylabel(r'$\sigma_{T}^2$')
 	plt.legend(loc='lower right')

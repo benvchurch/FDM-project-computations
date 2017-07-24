@@ -4,6 +4,7 @@ import numpy as np
 from scipy import special
 from numpy import log, exp, sin ,cos, pi, log10, sqrt
 from integrator import trapz2d
+from mpmath import meijerg
 
 crit_density = 1.3211775*10**-7; 
 f = 0.1;
@@ -120,7 +121,8 @@ def FourierIntegral(k):
 def NormedFourierMagInt(D, N):
 	gravParam = MFreeNFW(D, Mprimary)*G
 	phi = -PhiFreeNFW(D, Mprimary)
-	func = lambda m, r: 10**(m+r)*10**(2*r)  * Nhalo(10**m, D) * MHaloNFW(10**r, 10**m, D)*G/sqrt(2*pi) * FourierIntegral((10**r)*sqrt(gravParam/D**3)/sqrt(phi/3))
+	#change the power of mass
+	func = lambda m, r: 10**(m+r)*10**(2*r)  * Nhalo(10**m, D) * MHaloNFW(10**r, 10**m, D) *G * FourierIntegral((10**r)*sqrt(gravParam/D**3)/sqrt(phi/3))
 	M = np.linspace(-1, log10(f*Mprimary), num = N)
 	R = np.linspace(-1, log10(D/2), num = N)
 	Z = np.empty((N, N), dtype=object)
@@ -130,7 +132,28 @@ def NormedFourierMagInt(D, N):
 			
 	ans = trapz2d(Z, M, R)
 	return ans*4*pi/phi * log(10)**2 * sqrt(gravParam/D**3)/sqrt(phi/3)
-	
 
+MemoizedIntegral = dict()
+       
+def SqFourierIntegral(k):
+	if(k < 10):
+		return sqrt(pi)/4*(5.568327996831708 - float(meijerg([[1],[1]],[[1/2,1/2,1/2], [0]],k,1/2)))/k
+	else:
+		return 0
+
+def IntegSpectralPower(D, N):
+    gravParam = MFreeNFW(D, Mprimary)*G
+    phi = -PhiFreeNFW(D, Mprimary)
+    #change the power of mass
+    func = lambda m, r: 10**(m+r)*10**(2*r)  * Nhalo(10**m, D) * (MHaloNFW(10**r, 10**m, D))**2 * SqFourierIntegral((10**r)*sqrt(gravParam/D**3)/sqrt(phi/3))
+    M = np.linspace(-1, log10(f*Mprimary), num = N)
+    R = np.linspace(-1, log10(D/2), num = N)
+    Z = np.empty((N, N), dtype=object)
+    for i in range(N):
+        for j in range(N):
+            Z[i,j] = func(M[i], R[j])
+            
+    ans = trapz2d(Z, M, R)
+    return ans*4*pi/phi**2 * log(10)**2 * (gravParam/D**3)/(phi/3) * G**2
     
 
