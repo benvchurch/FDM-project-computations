@@ -32,6 +32,9 @@ def SolitonMass(M):
     
 def SolitonRadius(M):
     return 33*pi**2/1024 * ksol/ SolitonMass(M) * m22**-2
+    
+def SolitonHalfRadius(M):
+	return SolitonRadius(M)*sqrt(pow(2,1/8)-1)
 
 def SolitonProfile(r, M):
     Msol = SolitonMass(M)
@@ -69,7 +72,7 @@ def PhiFreeNFW(r, M):
         return -M*G/r
 
 def RhoFree(r, M):
-    R = SolitonRadius(M)
+    R12 = SolitonHalfRadius(M)
     if(r < MaxRadius(M)):
         if(r < R12):
             return SolitonProfile(r, M) + NFWProfile(r, M)
@@ -79,7 +82,7 @@ def RhoFree(r, M):
         return 0
         
 def MFree(r, M):
-    R = SolitonRadius(M)
+    R12 = SolitonHalfRadius(M)
     Rmax = MaxRadius(M)
     if(r < R12):
         return SolitonMassProfile(r, M) + 4/3*pi*r**3 * NFWProfile(R12, M)
@@ -111,7 +114,8 @@ def MSubHalo(r, M, D):
 def TidalLimit(M):
     Msol = SolitonMass(M)
     R = SolitonRadius(M)
-    return -2*Msol*G/R**3 * (48580/3465 - 1/3 + 7) * 2/pi + 4/3*pi*NFWProfile(R*sqrt(ksol), M)*2*G - 4*pi*G*RhoFree(0,M)
+    R12 = SolitonHalfRadius(M)
+    return -2*Msol*G/R**3 * (48580/3465 - 1/3 + 7) * 2/pi + 4/3*pi*NFWProfile(R12, M)*2*G - 4*pi*G*RhoFree(0,M)
     
 def SubHaloTidalForce(r, M, D):
     if(r < 10**-2):
