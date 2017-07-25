@@ -2,7 +2,7 @@
 #Not generalized to any potential yet as I'm not sure about the boundary conditions.
 from __future__ import division
 import numpy as np
-import pylab as plt
+from matplotlib import pyplot as plt
 
 
 hbar = 1
@@ -14,7 +14,7 @@ N = 10000
 Tolerance = 1e-3
 
 def v(x):
-    return 1/2*(x*10)**2
+    return 1/2*x**2
 def f(x, E):
     return (-E+v(x))*2*m/(hbar*hbar)
 

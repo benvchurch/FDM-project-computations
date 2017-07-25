@@ -17,7 +17,7 @@ p = 2
 num = 50
 
 #fluc, normedfluc, fourierfluc, sqfourierfluc,tidalvar 
-var = "sqfourierfluc"
+var = "normedfluc"
 
 #calc, test
 mode = "calc"
