@@ -16,8 +16,8 @@ p = 2
 #num plot points
 num = 50
 
-#fluc, normedfluc, fourierfluc, sqfourierfluc,tidalvar 
-var = "normedfluc"
+#fluc, normedfluc, fourierfluc, sqfourierfluc, tidalvar, flucwalk, veldispersion 
+var = "veldispersion"
 
 #calc, test
 mode = "calc"
@@ -57,6 +57,10 @@ elif(var == "sqfourierfluc"):
 	CDMfunc = CDM_SubHalo_Potential.IntegSpectralPower
 elif(var == "tidalvar"):
 	CDMfunc = CDM_SubHalo_Potential.TidalVariance
+elif(var == "flucwalk"):
+	CDMfunc = CDM_SubHalo_Potential.FlucWalk
+elif(var == "veldispersion"):
+	CDMfunc = CDM_SubHalo_Potential.VelocityDispersion
 
 def CDM_Calculate():
 	if(mode == "calc"):
@@ -74,7 +78,11 @@ elif(var == "sqfourierfluc"):
 	FDMfunc = FDM_SubHalo_Potential.IntegSpectralPower
 elif(var == "tidalvar"):
 	FDMfunc = FDM_SubHalo_Potential.TidalVariance
-		
+elif(var == "flucwalk"):
+	FDMfunc = FDM_SubHalo_Potential.FlucWalk
+elif(var == "veldispersion"):
+	FDMfunc = FDM_SubHalo_Potential.VelocityDispersion
+
 def FDM_Calculate(set_m22):
 	FDM_SubHalo_Potential.m22 = set_m22
 
@@ -83,31 +91,33 @@ def FDM_Calculate(set_m22):
 	elif(mode == "test"):
 		return map(lambda x: FDMfunc(Rtest, int(x)), ep)
 
-def main():
-	lines = []
-	
+def main():	
 	t = time.time()
-	lines.append(plt.loglog(D, CDM_Calculate(), label = '$CDM$', linestyle = '--'))
+	plt.loglog(D, CDM_Calculate(), label = '$CDM$', linestyle = '--')
 	print "done CDM in " + str(time.time() - t)
 	
 	log_axion_masses = [6,4,2,1,0,-1]
 	for logm in log_axion_masses:
 		
 		t = time.time()
-		lines.append(plt.loglog(D, FDM_Calculate(10**logm), label = r'$m_{a} = 10^{' + str(logm-22) +'} eV$'))
+		plt.loglog(D, FDM_Calculate(10**logm), label = r'$m_{a} = 10^{' + str(logm-22) +'} eV$')
 		print "done FDM log(m22) = " + str(logm) + " in " + str(time.time() - t)
 		
 	plt.xlabel(r'$r(pc)$')
 	if(var == "fluc"):
-		plt.ylabel(r'$ \left < \left (\frac{\partial \phi}{\partial t} \right )^2 \right > (km^4 s^{-4} Myr^{-2})$')
+		plt.ylabel(r'$ \sqrt{\left < \left (\frac{\partial \phi}{\partial t} \right )^2 \right >} \quad ((km/s)^{2} Myr^{-1})$')
 	elif(var == "normedfluc"):
-		plt.ylabel(r'$ \left < \left (\frac{\partial \phi}{\partial t} \right )^2 \right > \left (\frac{\Omega}{\phi} \right )^2$')
+		plt.ylabel(r'$ \sqrt{\left < \left (\frac{\partial \phi}{\partial t} \right )^2 \right > } \left (\frac{\Omega}{\phi} \right )$')
 	elif(var == "fourierfluc"):
 		plt.ylabel(r'\[ \frac{1}{\phi} \int_{\Omega}^{\infty} | \tilde{\phi}(\omega) | d\omega \]')
 	elif(var == "sqfourierfluc"):
 		plt.ylabel(r'\[ \frac{\Omega}{\phi^2} \int_{\Omega}^{\infty} | \tilde{\phi}(\omega) |^2 d\omega \]')
 	elif(var == "tidalvar"):
 		plt.ylabel(r'$\sigma_{T}^2$')
+	elif(var == "flucwalk"):
+		plt.ylabel(r'$ \sqrt{\left < \left (\frac{\partial \phi}{\partial t} \right )^2 \right >^{\frac{1}{2}} \cdot T_{age}} \quad (km/s)$')
+	elif(var == "veldispersion"):
+		plt.ylabel(r'$ \Delta v \: (km/s)$')
 	plt.legend(loc='lower right')
 	plt.show()
     
