@@ -1,0 +1,7 @@
+#!/bin/bash
+rm -r $(ls -R | grep '\.o\|\.pyc')
+
+git add *
+git commit
+git pull
+git push

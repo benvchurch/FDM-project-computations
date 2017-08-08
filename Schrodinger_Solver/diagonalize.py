@@ -49,34 +49,35 @@ for n in range(10):
 	psi.append(psi_E[:,n]/X)
 	norm = np.sqrt(scipy.integrate.simps(psi[n]**2, X))
 	psi[n]/=norm
-	#plt.figure()
-	#plt.loglog(X, psi[n]**2, label="$n=%i$" % n)
-	#plt.title("wavefunction #" + str(n))
-	#plt.xlabel("$x$ position")
-	#plt.ylabel("Normalized wavefunction amplitude $\psi^2$")
-	#plt.loglog(X, map(lambda x: psi[n][1]**2/(1+(x/4.13337988676)**2)**8, X))
-	#plt.grid()
-	#plt.legend(loc='lower left')
-	#plt.savefig(str(n) + "SolitonEigenvectors.png")
-	#plt.close()
+	plt.figure()
+	plt.loglog(X, psi[n]**2, label="$n=%i$" % n)
+	plt.title("eigenstate #" + str(n))
+	plt.xlabel("$r$ position")
+	plt.ylabel("Normalized amplitude $\psi^2$")
+	plt.loglog(X, map(lambda x: psi[n][1]**2/(1+(x/4.13337988676)**2)**8, X), label = "soliton fit")
+	plt.grid()
+	plt.legend(loc='lower left')
+	plt.xlim(0.1, l)
+	plt.savefig("SolitonEigenvector" + str(n) + ".png")
+	plt.close()
    
 lin_comb = [1, 0, 0, 0, 0, 0, 1, 1]
 
 def phi_sum(t):
-	sum = np.zeros(N)
+	s = np.zeros(N)
 	for i in range(len(lin_comb)):
 		for j in range(len(lin_comb)):
-			sum += lin_comb[i]*lin_comb[j]*psi[i]*psi[j]*np.cos((E[i]-E[j])*t)
-	return sum 
+			s += lin_comb[i]*lin_comb[j]*psi[i]*psi[j]*np.cos((E[i]-E[j])*t)
+	return s 
 
 # First set up the figure, the axis, and the plot element we want to animate
 fig = plt.figure()
-ax = plt.axes(xlim=(0.01, l), ylim=(0, 0.1))
-line, = ax.plot([], [], lw=2)
+ax = plt.axes(xlim=(0.15, l), ylim=(10**-6, 1))
+line, = ax.loglog(X, phi_sum(0))
 
 # initialization function: plot the background of each frame
 def init():
-    line.set_data([], [])
+    line.set_data(X, phi_sum(0))
     return line,
 
 # animation function.  This is called sequentially
