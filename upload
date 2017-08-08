@@ -1,6 +1,6 @@
 #!/bin/bash
-rm -r *.pyc
-rm -r *.o
+find . -name "*.pyc" -type f -delete
+find . -name "*.o" -type f -delete
 
 git add *
 git commit
