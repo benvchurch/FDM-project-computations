@@ -4,4 +4,5 @@
 *.pdf
 *.pyc
 *.o
+*.txt
 .bundle
