@@ -48,12 +48,12 @@ def main():
 	
 	plt.figure()
 	plt.loglog(Dens_x, Dens_y)
-	plt.ylabel(r'$ r(pc)$')
+	plt.xlabel(r'$ r(pc)$')
 	plt.ylabel(r'$ \rho \quad (M_{\odot} pc^{-3})$')
 	
 	plt.figure()
 	plt.loglog(Flucs_x, Flucs_y)
-	plt.ylabel(r'$ r(pc)$')
+	plt.xlabel(r'$ r(pc)$')
 	plt.ylabel(r'$ \sqrt{\left < \left (\frac{\partial \phi}{\partial t} \right )^2 \right >} \quad ((km/s)^{2} Myr^{-1})$')
 	plt.show()
 	
