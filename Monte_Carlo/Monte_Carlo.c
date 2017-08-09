@@ -212,7 +212,7 @@ double Fluc(halo **halos, int num_halos, double D)
 		sum += pow(enclosed_mass(halos[i], r) * G /(r*r), 2.0) * (pow(halos[i]->v_r, 2.0) + pow(halos[i]->v_theta, 2.0) + 2*(halos[i]->v_r)*(halos[i]->v_theta) * D*s/r * sqrt(1 - pow(D*s/r, 2.0)) * sign(D-R));
 		//printf("%f ", (pow(halos[i]->v_r, 2.0) + pow(halos[i]->v_theta, 2.0) + 2*(halos[i]->v_r)*(halos[i]->v_theta) * D*s/r * sqrt(1 - pow(D*s/r, 2.0)) * sign(D-R)));
 	}
-	return sum;
+	return sqrt(sum);
 }
 
 double H_Density(halo **halos, int num_halos, double D, double dD)
@@ -257,7 +257,7 @@ int main(int argc, char **argv)
 	T = gsl_rng_default;
 	RNG = gsl_rng_alloc (T);
 	
-	int num_trials = 10000;
+	int num_trials = pow(10, 7);
 	int num_points = 100;
 	double Flucs[num_points], Dens[num_points], Hist[num_points];
 	double mass = 0, avg_mass = 0;
@@ -305,11 +305,42 @@ int main(int argc, char **argv)
 		for(j = 0; j < num_halos; j++)
 			free(halolist[j]);
 	}
-	for(j = 0; j < num_points; j++)
+	
+	FILE *f = fopen("Density.txt", "w");
+	if(f != NULL)
 	{
-		printf("%f : %f\n", pow(10, 5.0*j/num_points), log10(Flucs[j]));
-		//printf("%f : %f\n", log10(R_max_prim*(j+1)/(double)num_points), log10(Dens[j]));
+		for(j = 0; j < num_points; j++)
+		{
+			fprintf(f, "%f %f\n", log10(R_max_prim*(j+1)/(double)num_points), log10(Dens[j]));
+		}
+		fclose(f);
 	}
+	else
+	{
+		for(j = 0; j < num_points; j++)
+		{
+			printf("%f : %f\n", log10(R_max_prim*(j+1)/(double)num_points), log10(Dens[j]));
+		}
+	}
+	
+	f = fopen("Flucs.txt", "w");
+	if(f != NULL)
+	{
+		for(j = 0; j < num_points; j++)
+		{
+			fprintf(f, "%f %f\n", 5.0*j/num_points, log10(Flucs[j]));
+		}
+		fclose(f);
+	}
+	
+	else
+	{
+		for(j = 0; j < num_points; j++)
+		{
+			printf("%f : %f\n", 5.0*j/num_points, log10(Flucs[j]));
+		}
+	}
+
 	printf("Mass frac: %f \n", avg_mass/Mprimary);
 	gsl_rng_free (RNG);
 	return 0;
