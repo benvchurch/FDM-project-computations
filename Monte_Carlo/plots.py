@@ -52,7 +52,7 @@ def main():
 	plt.ylabel(r'$ \rho \quad (M_{\odot} pc^{-3})$')
 	
 	plt.figure()
-	plt.loglog(Flucs_x, Flucs_y)
+	plt.plot(Flucs_x, Flucs_y)
 	plt.xlabel(r'$ r(pc)$')
 	plt.ylabel(r'$ \sqrt{\left < \left (\frac{\partial \phi}{\partial t} \right )^2 \right >} \quad ((km/s)^{2} Myr^{-1})$')
 	plt.show()

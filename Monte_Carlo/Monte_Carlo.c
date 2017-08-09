@@ -212,7 +212,7 @@ double Fluc(halo **halos, int num_halos, double D)
 		sum += pow(enclosed_mass(halos[i], r) * G /(r*r), 2.0) * (pow(halos[i]->v_r, 2.0) + pow(halos[i]->v_theta, 2.0) + 2*(halos[i]->v_r)*(halos[i]->v_theta) * D*s/r * sqrt(1 - pow(D*s/r, 2.0)) * sign(D-R));
 		//printf("%f ", (pow(halos[i]->v_r, 2.0) + pow(halos[i]->v_theta, 2.0) + 2*(halos[i]->v_r)*(halos[i]->v_theta) * D*s/r * sqrt(1 - pow(D*s/r, 2.0)) * sign(D-R)));
 	}
-	return sqrt(sum);
+	return sum;
 }
 
 double H_Density(halo **halos, int num_halos, double D, double dD)
@@ -328,7 +328,7 @@ int main(int argc, char **argv)
 	{
 		for(j = 0; j < num_points; j++)
 		{
-			fprintf(f, "%f %f\n", 5.0*j/num_points, log10(Flucs[j]));
+			fprintf(f, "%f %f\n", 5.0*j/num_points, 0.5*log10(Flucs[j]));
 		}
 		fclose(f);
 	}
@@ -337,7 +337,7 @@ int main(int argc, char **argv)
 	{
 		for(j = 0; j < num_points; j++)
 		{
-			printf("%f : %f\n", 5.0*j/num_points, log10(Flucs[j]));
+			printf("%f : %f\n", 5.0*j/num_points, 0.5*log10(Flucs[j]));
 		}
 	}
 
