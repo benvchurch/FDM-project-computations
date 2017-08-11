@@ -3,4 +3,3 @@ rm *.txt
 ./comp_mc "Monte_Carlo.c" $1 exc
 
 python plots.py
-
