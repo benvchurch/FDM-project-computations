@@ -253,9 +253,12 @@ double Fluc(halo **halos, int num_halos, double D)
 	{
 		double R = halos[i]->R;
 		double r = sqrt(R*R + D*D - 2.0*R*D*cos(halos[i]->theta));
-		double s = sin(halos[i]->theta);
-		sum += pow(enclosed_mass(halos[i], r) * G /(r*r), 2.0) * (pow(halos[i]->v_r, 2.0) + pow(halos[i]->v_theta, 2.0) + 2*(halos[i]->v_r)*(halos[i]->v_theta) * D*s/r * sqrt(1 - pow(D*s/r, 2.0)) * sign(D-R));
-		//printf("%f ", (pow(halos[i]->v_r, 2.0) + pow(halos[i]->v_theta, 2.0) + 2*(halos[i]->v_r)*(halos[i]->v_theta) * D*s/r * sqrt(1 - pow(D*s/r, 2.0)) * sign(D-R)));
+		double sin_sq = pow(D/r*sin(halos[i]->theta), 2), cos_sq = 1 - sin_sq;
+		sum += pow(enclosed_mass(halos[i], r) * G /(r*r), 2.0)
+			* (pow(halos[i]->v_r, 2.0)*cos_sq + pow(halos[i]->v_theta, 2.0)*sin_sq + 2*(halos[i]->v_r)*(halos[i]->v_theta) * sqrt(sin_sq*cos_sq)
+			* sign(sin(halos[i]->theta)*(D*cos(halos[i]->theta) - R)));
+	//	printf("R: %f D: %f Theta: %f Vr: %f Vt: %f Vrad: %f\n", halos[i]->R, D, halos[i]->theta, halos[i]->v_r, halos[i]->v_theta, (pow(halos[i]->v_r, 2.0)*cos_sq + pow(halos[i]->v_theta, 2.0)*sin_sq + 2*(halos[i]->v_r)*(halos[i]->v_theta) * sqrt(sin_sq*cos_sq)
+	//	* sign(sin(halos[i]->theta)*(D*cos(halos[i]->theta) - R))));
 	}
 	return sum;
 }
