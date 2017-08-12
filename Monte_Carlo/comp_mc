@@ -1,5 +1,0 @@
-#!/bin/bash
-
-gcc -L/usr/local/lib/gsl $1 -lgsl -lgslcblas -lm -o $3
-
-LD_LIBRARY_PATH=/usr/local/lib/gsl GSL_RNG_TYPE="taus" GSL_RNG_SEED=$2 ./$3

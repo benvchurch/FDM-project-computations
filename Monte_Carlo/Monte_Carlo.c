@@ -24,6 +24,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
@@ -38,7 +39,10 @@
 gsl_rng *RNG;
 gsl_integration_workspace * w;
 
-double pi = 3.14159265;
+const int default_log_num_trials = 6;
+int num_trials, num_points = 100;
+
+const double pi = 3.14159265;
 double crit_density = 1.3211775*0.0000001,
 	f = 0.1,
 	g = 0.0001,
@@ -279,14 +283,19 @@ int hist(halo **halos, int num_halos, double D, double dD)
 	return sum;
 }
 
-void init()
+void init(int argc, char **argv)
 {
 	const gsl_rng_type *T;
 	gsl_rng_env_setup();
 	T = gsl_rng_default;
 	RNG = gsl_rng_alloc (T);
 	w = gsl_integration_workspace_alloc (1000);
-
+	
+	if(argc == 2)
+		num_trials = (int)pow(10, atoi(argv[1]));
+	else
+		num_trials = (int)pow(10, default_log_num_trials);
+		
 	R_max_prim = MaxRadius(M_prim);
 	c_prim = c_bar(M_prim);
 	R_core_prim = R_max_prim/c_prim;
@@ -296,20 +305,48 @@ void init()
 		/ (pow(m_max/M_prim, 2.0-p) - pow(m_min/M_prim, 2.0-p));
 }
 
+void print_to_file(char *name, double *Ds, double *data)
+{
+	int j;
+	char path[100], filename[50], snum[10], addendum[10];
+	strcpy(path, "data_files/");
+	strcpy(filename, name);
+	strcpy(addendum, ".txt");
+	snprintf(snum, 10, "%d_%d", (int)gsl_rng_default_seed, (int)log10(num_trials));
+	strcat(path, filename);
+	strcat(path, snum);
+	strcat(path, addendum);
+
+	FILE *f = fopen(path, "w");
+	if(f != NULL)
+	{
+		for(j = 0; j < num_points; j++)
+		{
+			fprintf(f, "%f %f\n", log10(Ds[j]), log10(data[j]));
+		}
+		fclose(f);
+	}
+	else
+	{
+		for(j = 0; j < num_points; j++)
+		{
+			printf("%f : %f\n", log10(Ds[j]), log10(data[j]));
+		}
+	}
+}
+
 int main(int argc, char **argv)
 {
-	init();
-	int num_trials = pow(10, 6);
-	int num_points = 100;
-	double Flucs[num_points], Dens[num_points], Hist[num_points];
+	init(argc, argv);
+	double Ds[num_points], Flucs[num_points], Dens[num_points];
 	double mass = 0, avg_mass = 0;
 	int i,j;
 
 	for(i = 0; i < num_points; i++)
 	{
+		Ds[i] = pow(10, 5.0*i/num_points);
 		Flucs[i] = 0;
 		Dens[i] = 0;
-		Hist[i] = 0;
 	}
 
 	for(i = 0; i < num_trials; i++)
@@ -330,9 +367,8 @@ int main(int argc, char **argv)
 
 		for(j = 0; j < num_points; j++)
 		{
-			Flucs[j] += Fluc(halolist, num_halos, pow(10, 5.0*j/num_points))/num_trials;
-			Dens[j] += H_Density(halolist, num_halos, R_max_prim*j/(double)num_points, R_max_prim/(double)num_points)/num_trials;
-			Hist[j] += hist(halolist, num_halos, R_max_prim*(j+1)/(double)num_points, R_max_prim/(double)num_points)/num_trials;
+			Flucs[j] += Fluc(halolist, num_halos, Ds[j])/num_trials;
+			Dens[j] += (j == 0 ? H_Density(halolist, num_halos, Ds[j], Ds[j]) : H_Density(halolist, num_halos, Ds[j], Ds[j] - Ds[j-1]))/num_trials;
 		}
 		//printf("Mass frac: %f \n", mass/M_prim);
 		avg_mass += mass/num_trials;
@@ -347,41 +383,8 @@ int main(int argc, char **argv)
 		for(j = 0; j < num_halos; j++)
 			free(halolist[j]);
 	}
-
-	FILE *f = fopen("Density.txt", "w");
-	if(f != NULL)
-	{
-		for(j = 0; j < num_points; j++)
-		{
-			fprintf(f, "%f %f\n", log10(R_max_prim*(j+1)/(double)num_points), log10(Dens[j]));
-		}
-		fclose(f);
-	}
-	else
-	{
-		for(j = 0; j < num_points; j++)
-		{
-			printf("%f : %f\n", log10(R_max_prim*(j+1)/(double)num_points), log10(Dens[j]));
-		}
-	}
-
-	f = fopen("Flucs.txt", "w");
-	if(f != NULL)
-	{
-		for(j = 0; j < num_points; j++)
-		{
-			fprintf(f, "%f %f\n", 5.0*j/num_points, 0.5*log10(Flucs[j]));
-		}
-		fclose(f);
-	}
-
-	else
-	{
-		for(j = 0; j < num_points; j++)
-		{
-			printf("%f : %f\n", 5.0*j/num_points, 0.5*log10(Flucs[j]));
-		}
-	}
+	print_to_file("Density", Ds, Dens);
+	print_to_file("Flucs", Ds, Flucs);
 
 	printf("Mass frac: %f \n", avg_mass/M_prim);
 	gsl_rng_free (RNG);

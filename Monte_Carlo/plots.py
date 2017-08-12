@@ -6,6 +6,7 @@ from numpy import log, exp, sin ,cos, pi, log10, sqrt
 from scipy.integrate import quad, dblquad, cumtrapz
 from matplotlib import pyplot as plt
 import time
+import sys
 
 
 params = {
@@ -22,7 +23,7 @@ params = {
    'figure.subplot.bottom': 0.12,
    'figure.subplot.top': 0.95,
    'figure.subplot.left': 0.225,
-   #'font.size': 22
+   #'font.size': 22 
    }
 plt.rcParams.update(params)
 
@@ -43,20 +44,20 @@ def readData(fileName):
 	return x, y
 
 def main():
-	Dens_x, Dens_y = readData("Density.txt")
-	Flucs_x, Flucs_y = readData("Flucs.txt")
+	Dens_x, Dens_y = readData("data_files/Density" + sys.argv[1] + '_' + sys.argv[2] + ".txt")
+	Flucs_x, Flucs_y = readData("data_files/Flucs" + sys.argv[1] + '_' + sys.argv[2] + ".txt")
 
 	plt.figure()
 	plt.loglog(Dens_x, Dens_y)
 	plt.xlabel(r'$ r(pc)$')
 	plt.ylabel(r'$ \rho \quad (M_{\odot} pc^{-3})$')
+	plt.savefig('../../Results/Monte_Carlo/Density' + sys.argv[1] + '_' + sys.argv[2] + '.png')
 
 	plt.figure()
 	plt.loglog(Flucs_x, Flucs_y)
 	plt.xlabel(r'$ r(pc)$')
 	plt.ylabel(r'$ \sqrt{\left < \left (\frac{\partial \phi}{\partial t} \right )^2 \right >} \quad ((km/s)^{2} Myr^{-1})$')
-	plt.show()
-
+	plt.savefig('../../Results/Monte_Carlo/Flucs' + sys.argv[1] + '_' + sys.argv[2] + '.png')
 
 if __name__ == "__main__":
-    main()
+	main()
