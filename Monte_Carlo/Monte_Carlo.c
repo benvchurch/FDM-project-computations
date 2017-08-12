@@ -96,7 +96,7 @@ double TidalRadius(double M, double R)
 	return R*pow(M/(2*MFreeNFW(R)), 1.0/3.0);
 }
 
-double func(double x, double r)
+double NFW_func(double x, double r)
 {
     return (log(1.0 + x) - x/(1.0 + x))/(log(1.0 + c_prim) - c_prim/(1.0 + c_prim)) - r;
 }
@@ -109,16 +109,16 @@ double df (double x)
 double newton(double r)
 {
     int itr, maxmitr = 100;
-    double h, x0 = 0.5, x1, allerr = 0.00001;
+    double h, x0 = 0.1, x1, allerr = 0.000001;
 
     for (itr = 0; itr < maxmitr; itr++)
     {
-        h = func(x0, r)/df(x0);
+        h = NFW_func(x0, r)/df(x0);
         x1 = x0 - h;
 
-        if (abs(h) < allerr)
+        if (fabs(h) < allerr)
         {
-           return x1;
+            return x1;
         }
         x0 = x1;
     }
@@ -204,7 +204,8 @@ void truncate(halo *ptr, double R)
 	double r0 = l2/(M_prim * G);
 	double E = 0.5*(pow(ptr->v_r, 2) + pow(ptr->v_phi, 2) + pow(ptr->v_theta, 2)) + PhiFreeNFW(R);
 	double ecc =  sqrt(1.0 + 2.0*E*l2/pow(M_prim * G, 2));
-	double R_min = min(abs(r0/(1+ecc)), abs(r0/(1-ecc)));
+	double R_min = min(fabs(r0/(1 + ecc)), fabs(r0/(1 - ecc)));
+	//printf("Vr: %f  V: %f R: %f Phi: %f\n", ptr->v_r, sqrt(pow(ptr->v_r, 2) + pow(ptr->v_phi, 2) + pow(ptr->v_theta, 2)), R, PhiFreeNFW(R));
 	//printf("Energy: %f  Reduc: %f\n", E, R_min/R);
 
 	if(E > 0 || R_min < 0.1)
@@ -290,12 +291,12 @@ void init(int argc, char **argv)
 	T = gsl_rng_default;
 	RNG = gsl_rng_alloc (T);
 	w = gsl_integration_workspace_alloc (1000);
-	
+
 	if(argc == 2)
 		num_trials = (int)pow(10, atoi(argv[1]));
 	else
 		num_trials = (int)pow(10, default_log_num_trials);
-		
+
 	R_max_prim = MaxRadius(M_prim);
 	c_prim = c_bar(M_prim);
 	R_core_prim = R_max_prim/c_prim;
