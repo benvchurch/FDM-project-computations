@@ -33,12 +33,16 @@
 #include <gsl/gsl_integration.h>
 #include <time.h>
 
+#define INTEGRATION_POINTS 81
+#define INTEGRAL_FUDGE_FACTOR 1.0125
 #define min(x,y) (x < y? x : y)
 #define sign(x) (x >= 0? 1.0 : -1.0)
 #define dot_macro(A, B) ((A).x * (B).x + (A).y * (B).y + (A).z * (B).z)
 #define mag_sq(A) dot_macro(A, A)
 #define mag(A) sqrt(dot_macro(A, A))
 #define assign_vec(A, x_val, y_val, z_val) {(A).x = x_val; (A).y = y_val; (A).z = z_val;}
+#define assign_vec_diff(d, A, B) {(d).x = (A).x - (B).x; (d).y = (A).y - (B).y; (d).z = (A).z - (B).z;}
+#define make_unit(A) {double len = mag(A); assign_vec(A, (A.x)/len, (A.y)/len, (A.z)/len);}
 
 gsl_rng *RNG;
 gsl_integration_workspace * w;
@@ -47,14 +51,14 @@ const int default_log_num_trials = 6;
 int num_trials, num_points = 100;
 
 const double pi = 3.14159265;
-double crit_density = 1.3211775*0.0000001,
+double crit_density = 1.3211775E-7,
 	f = 0.1,
-	g = 0.0001,
+	g = 1E-4,
 	p = 1.9,
 	G = 0.0045,
 	k = 2,
-	M_prim = 1000000000000,
-	T_age = 10000;
+	M_prim = 1E12,
+	T_age = 1E4;
 
 double m_max, m_min, expected_num, R_core_prim, R_max_prim, c_prim;
 
@@ -89,6 +93,7 @@ void reset_cell(data_cell *ptr)
 typedef struct
 {
 	double R, theta, phi;
+	double cos_theta;
 	double M, r_core, r_max, alpha, beta, c, normalization;
 	vector v, position;
 } halo;
@@ -98,43 +103,11 @@ void print_vector(vector *A)
 	printf("<%.3f, %.3f, %.3f>\n", A->x, A->y, A->z);
 }
 
-vector *add_vec(vector *res, vector *A, vector *B)
-{
-	assign_vec(*res, A->x + B->x, A->y + B->y, A->z + B->z);
-	return res;
-}
-
-vector *sub_vec(vector *res, vector *A, vector *B)
-{
-	assign_vec(*res, A->x - B->x, A->y - B->y, A->z - B->z);
-	return res;
-}
-
-double dot(vector *A,  vector *B)
-{
-	return dot_macro(*A, *B);
-}
-
-vector *scale(vector *res, double c, vector *A)
-{
-	assign_vec(*res, c*(A->x), c*(A->y), c*(A->z));
-	return res;
-}
-
-vector *unit(vector *unit_vec, vector *diff, vector *A, vector *B)
-{
-	sub_vec(diff, B, A);
-	return scale(unit_vec, 1/mag(*diff), diff);
-}
-
-
 double perp_mag_sq(vector *A, vector *u)
 {
 	double dot_prod = dot_macro(*A, *u);
 	return mag_sq(*A) - dot_prod*dot_prod/mag_sq(*u);
 }
-
-
 
 double MFreeNFW(double r)
 {
@@ -172,7 +145,7 @@ double NFW_func(double x, double r)
 
 double df (double x)
 {
-    return x/pow(1.0 + x, 2.0) * 1.0/(log(1.0 + c_prim) - c_prim/(1.0 + c_prim));
+    return x/((1.0 + x)*(1.0 + x)) * 1.0/(log(1.0 + c_prim) - c_prim/(1.0 + c_prim));
 }
 
 double newton(double r)
@@ -200,20 +173,48 @@ double rho_profile(double x, void *params)
 	return pow(x, 2 - param_ptr[0])*pow((1 + x), param_ptr[0] - param_ptr[1]);
 }
 
+gsl_function F;
+
 double integ_profile(double alpha, double beta, double r)
 {
-	double result, error;
+	if(alpha > 3)
+		return 1;
+
 	double arr[2];
 	arr[0] = alpha;
 	arr[1] = beta;
+	double dist = 0, step = r/INTEGRATION_POINTS;
+	double sum = 0;
+	int i;
 
-  	gsl_function F;
-  	F.function = &rho_profile;
+	for(i = 0; i < INTEGRATION_POINTS; i++)
+	{
+		if(i == 0 && alpha > 2 && alpha < 3)
+			sum += 8.0/(3.0*step) * 1/(3.0 - alpha) * pow(step, 3 - alpha);
+		else if(i == 0 || i == INTEGRATION_POINTS - 1)
+			sum += rho_profile(dist, arr);
+		else if(i%3 == 0)
+			sum += 2*rho_profile(dist, arr);
+		else
+			sum += 3*rho_profile(dist, arr);
+		dist += step;
+	}
+
+	return 3.0*step/8.0*sum * INTEGRAL_FUDGE_FACTOR;
+
+	/*printf("int %f\n", 3*step/8*sum);
+	double quick_result = 3.0*step/8.0*sum * INTEGRAL_FUDGE_FACTOR;
+	double result, error;
+
+	F.function = &rho_profile;
   	F.params = arr;
 
-  	gsl_integration_qags (&F, 0, r, 0, 1e-6, 1000, w, &result, &error);
-	if(error/result > 1e-6)printf("LARGE INTEG ERROR WARNING %f for result %f", error, result);
-	return result;
+  	gsl_integration_qags (&F, 0, r, 0, 1e-7, 1000, w, &result, &error);
+	if(error/result > 1e-7)printf("LARGE INTEG ERROR WARNING %f for result %f", error, result);
+
+	printf("alpha: %.3f beta: %.3f r: %.3f err %f\n", alpha, beta, r, (result - quick_result)/result);
+
+	return 0.5*(result + quick_result);*/
 }
 
 double get_M()
@@ -287,13 +288,13 @@ void truncate(halo *ptr, double R)
 	}
 }
 
-halo *make_halo()
+halo *make_halo(halo *ptr)
 {
-	halo *ptr = (halo *) malloc(sizeof(halo));
 	ptr->R = newton(gsl_rng_uniform(RNG)) * R_core_prim;
-	ptr->theta = acos(2*gsl_rng_uniform(RNG) - 1);
+	ptr->cos_theta = 2*gsl_rng_uniform(RNG) - 1;
+	ptr->theta = acos(ptr->cos_theta);
 	ptr->phi = 2*pi*gsl_rng_uniform(RNG);
-	assign_vec(ptr->position, ptr->R*sin(ptr->theta)*cos(ptr->phi), ptr->R*sin(ptr->theta)*sin(ptr->phi), ptr->R*cos(ptr->theta));
+	assign_vec(ptr->position, ptr->R * sin(ptr->theta) * cos(ptr->phi), ptr->R * sin(ptr->theta) * sin(ptr->phi), ptr->R * ptr->cos_theta);
 
 	ptr->M = get_M();
 	set_shape(ptr, ptr->M, ptr->R);
@@ -309,17 +310,21 @@ void print_halo_basic(halo *ptr)
 }
 
 
-double Fluc(halo **halos, int num_halos, double D)
+double Fluc(halo *halos, int num_halos, double D)
 {
 	double sum = 0;
 	int i;
-	vector my_pos = {0, 0, D}, unit_vec, diff;
+	vector my_pos = {0, 0, D}, diff;
 	for(i = 0; i < num_halos; i++)
 	{
-		double R = halos[i]->R;
-		double r = sqrt(R*R + D*D - 2.0*R*D*cos(halos[i]->theta));
-		double v_r = dot(&(halos[i]->v), unit(&unit_vec, &diff, &my_pos, &(halos[i]->position)));
-		sum += enclosed_mass(halos[i], r) * G /(r*r) * v_r;
+		double R = halos[i].R;
+		double r = sqrt(R*R + D*D - 2.0*R*D*halos[i].cos_theta);
+
+		assign_vec_diff(diff, halos[i].position, my_pos);
+		make_unit(diff)
+		double v_r = dot_macro(halos[i].v, diff);
+
+		sum += enclosed_mass(halos + i, r) * G /(r*r) * v_r;
 		/*printf("%.3f\n", D);
 		printf("velocity: ");
 		print_vector(halos[i]->v);
@@ -327,32 +332,21 @@ double Fluc(halo **halos, int num_halos, double D)
 		print_vector(halo_pos(halos[i]));
 		printf("R = %.3f theta = %.3f phi = %.3f\n v_r = %.3f \n", halos[i]->R, halos[i]->theta, halos[i]->phi, v_r);*/
 	}
-	return pow(sum, 2.0);
+	return sum*sum;
 }
 
-double H_Density(halo **halos, int num_halos, double D, double dD)
+double H_Density(halo *halos, int num_halos, double D, double dD)
 {
 	double sum = 0;
 	int i;
 	for(i = 0; i < num_halos; i++)
 	{
-		if(halos[i]->R < D && halos[i]->R > D - dD)
-			sum += halos[i]->M;
+		if(halos[i].R < D && halos[i].R > D - dD)
+			sum += halos[i].M;
 	}
 	return sum/(4.0*pi*D*D*dD);
 }
 
-int hist(halo **halos, int num_halos, double D, double dD)
-{
-	double sum = 0;
-	int i;
-	for(i = 0; i < num_halos; i++)
-	{
-		if(halos[i]->R  < D && halos[i]->R > D - dD)
-			sum ++;
-	}
-	return sum;
-}
 
 int print_out = 0;
 
@@ -418,7 +412,7 @@ void print_to_file(char *name, double *Ds, data_cell *data)
 		for(j = 0; j < num_points; j++)
 		{
 			double sig = std_err_mean(data[j].s)/data[j].m/log(10);
-			if(data[j].m != 0 && sig < 100)
+			if(data[j].m != 0 && sig < 10)
 				fprintf(f, "%f %f %f\n", log10(Ds[j]), log10(data[j].m), sig);
 		}
 		fclose(f);
@@ -428,7 +422,7 @@ void print_to_file(char *name, double *Ds, data_cell *data)
 		for(j = 0; j < num_points; j++)
 		{
 			double sig = std_err_mean(data[j].s)/data[j].m/log(10);
-			if(data[j].m != 0 && sig < 100)
+			if(data[j].m != 0 && sig < 10)
 				printf("%f : %f +/- %f\n", log10(Ds[j]), log10(data[j].m), sig);
 		}
 	}
@@ -437,8 +431,12 @@ void print_to_file(char *name, double *Ds, data_cell *data)
 int main(int argc, char **argv)
 {
 	init(argc, argv);
+	unsigned int max_allowed_halos = (int)(10*expected_num);
+
 	double Ds[num_points];
 	data_cell Flucs[num_points], Dens[num_points];
+	halo *halolist = malloc(max_allowed_halos*sizeof(halo));
+
 	double mass = 0, avg_mass = 0;
 	int i,j;
 
@@ -452,23 +450,35 @@ int main(int argc, char **argv)
 	for(i = 0; i < num_trials; i++)
 	{
 		if(i % 100 == 0)printf("%d out of %d \n", i/100, num_trials/100);
-		unsigned long num_halos = gsl_ran_poisson(RNG, expected_num);
-
+		unsigned int num_halos = gsl_ran_poisson(RNG, expected_num);
+		if(num_halos > max_allowed_halos)
+		{
+			max_allowed_halos *= 2;
+			free(halolist);
+			halolist = malloc(max_allowed_halos*sizeof(halo));
+			printf("ALLOCATING\n");
+		}
 		mass = 0;
 		//printf("Expect: %f   Have: %lu \n", expected_num, num_halos);
 
-		halo *halolist[num_halos];
 		for(j = 0; j < num_halos; j++)
 		{
-			halolist[j] = make_halo();
-			mass += halolist[j]->M;
-			//print_halo_basic(halolist[j]);
+			make_halo(halolist + j);
+			//print_halo_basic(halolist + j);
+			mass += halolist[j].M;
+
+			if(mass != mass)
+			{
+				print_halo_basic(halolist + j);
+				printf("%f %f %d %f\n", mass, halolist[j].M, j, halolist[j].alpha);
+				return -1;
+			}
 		}
 
 		for(j = 0; j < num_points; j++)
 		{
-			update_cell(&Flucs[j], Fluc(halolist, num_halos, Ds[j]), j + 1);
-			update_cell(&Dens[j], (j == 0 ? H_Density(halolist, num_halos, Ds[j], Ds[j]) : H_Density(halolist, num_halos, Ds[j], Ds[j] - Ds[j-1])), j + 1);
+			update_cell(Flucs + j, Fluc(halolist, num_halos, Ds[j]), j + 1);
+			update_cell(Dens + j, (j == 0 ? H_Density(halolist, num_halos, Ds[j], Ds[j]) : H_Density(halolist, num_halos, Ds[j], Ds[j] - Ds[j-1])), j + 1);
 		}
 		//printf("Mass frac: %f \n", mass/M_prim);
 		avg_mass += mass/num_trials;
@@ -480,8 +490,6 @@ int main(int argc, char **argv)
 			//printf("%f : %f\n", pow(10, 5.0*j/num_points), Hist[j]);
 		}*/
 
-		for(j = 0; j < num_halos; j++)
-			free(halolist[j]);
 	}
 	print_to_file("Density", Ds, Dens);
 	sq_root_data(Flucs, num_points);
