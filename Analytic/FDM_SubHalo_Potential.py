@@ -59,7 +59,7 @@ def Truncate(m, R):
         return MFree(TidalRadius(m, R), m)
 
 def NumericTruncate(m, R):
-    if(R > MpriMax):
+    if(R > MaxRadius(Mprimary)):
         return m
     else:
         return m * pow(R,0.6)/pow(10,3.2)

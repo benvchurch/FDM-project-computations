@@ -8,7 +8,7 @@ def Truncate(m, R):
         return MFreeNFW(TidalRadius(m, R), m)
 
 def NumericTruncate(m, R):
-    if(R > MpriMax):
+    if(R > MaxRadius(Mprimary)):
         return m
     else:
         return m * pow(R,0.6)/pow(10,3.2)
@@ -22,7 +22,7 @@ def MHaloNFW(r, M, R):
         return M*(log(1+Rmax/Rc)-Rmax/(Rmax+Rc))/(log(1+c) - c/(1+c))
 
 def Nhalo(m, R):
-    return pow(m, -p)*DFreeNFW(R, Mprimary)*(2-p)*pow(f,p-1)*pow(Mprimary, p-2)
+	return pow(m, -p)*DFreeNFW(R, Mprimary)*(2-p)*pow(f,p-1)*pow(Mprimary, p-2)
 
 def HaloDensity(R):
     return quad(lambda x: Truncate(x, R) * Nhalo(x, R), 0, f*Mprimary)[0]
@@ -98,29 +98,35 @@ def IntegSpectralPower(D, N):
     ans = trapz2d(Z, M, R)
     return sqrt(ans*4*pi/phi**2 * log(10)**2 * (gravParam/D**3)/(phi/3) * G**2)
 
-def FlucWalk(D, N):
-    func = lambda m, r: 10**(m+r)*10**(2*r)  * Nhalo(10**m, D) * PotChange(10**m, D, 10**r)**2
-    M = np.linspace(-1, log10(f*Mprimary), num = N)
-    R = np.linspace(-1, log10(D/2), num = N)
-    Z = np.empty((N, N), dtype=object)
-    for i in range(N):
-        for j in range(N):
-            Z[i,j] = func(M[i], R[j])
+def FlucWalk(D, N, Mp):
+	global Mprimary
+	Mprimary = Mp
+	
+	func = lambda m, r: 10**(m+r)*10**(2*r)  * Nhalo(10**m, D) * PotChange(10**m, D, 10**r)**2
+	M = np.linspace(-1, log10(f*Mprimary), num = N)
+	R = np.linspace(-1, log10(D/2), num = N)
+	Z = np.empty((N, N), dtype=object)
+	for i in range(N):
+		for j in range(N):
+			Z[i,j] = func(M[i], R[j])
      
-    ans = trapz2d(Z, M, R)
-    return sqrt(sqrt(ans*4*pi*(-PhiFreeNFW(D, Mprimary)/3) * log(10)**2)*T_age)
+	ans = trapz2d(Z, M, R)
+	return sqrt(sqrt(ans*4*pi*(-PhiFreeNFW(D, Mprimary)/3) * log(10)**2)*T_age)
     
-def VelocityDispersion(D, N):
-    func = lambda m, r: 10**(m+r)*10**(2*r)  * Nhalo(10**m, D) * PotChange(10**m, D, 10**r)**2 * 10**r
-    M = np.linspace(-1, log10(f*Mprimary), num = N)
-    R = np.linspace(-1, log10(D/2), num = N)
-    Z = np.empty((N, N), dtype=object)
-    for i in range(N):
-        for j in range(N):
-            Z[i,j] = func(M[i], R[j])
+def VelocityDispersion(D, N, Mp):
+	global Mprimary
+	Mprimary = Mp
+	
+	func = lambda m, r: 10**(m+r)*10**(2*r)  * Nhalo(10**m, D) * PotChange(10**m, D, 10**r)**2 * 10**r
+	M = np.linspace(-1, log10(f*Mprimary), num = N)
+	R = np.linspace(-1, log10(D/2), num = N)
+	Z = np.empty((N, N), dtype=object)
+	for i in range(N):
+		for j in range(N):
+			Z[i,j] = func(M[i], R[j])
      
-    ans = trapz2d(Z, M, R)
-    return sqrt(ans*4*pi/sqrt(-PhiFreeNFW(D, Mprimary)/3) * log(10)**2*T_age)        
+	ans = trapz2d(Z, M, R)
+	return sqrt(ans*4*pi/sqrt(-PhiFreeNFW(D, Mprimary)/3) * log(10)**2*T_age)        
 
     
 def FlucWalkMassDownTo(D, M, N):

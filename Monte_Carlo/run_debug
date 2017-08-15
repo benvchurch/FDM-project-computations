@@ -1,0 +1,8 @@
+#!/bin/bash
+
+gcc -L/usr/local/lib/gsl "Monte_Carlo.c" -lgsl -lgslcblas -lm -o exc -pg
+
+LD_LIBRARY_PATH=/usr/local/lib/gsl GSL_RNG_TYPE="taus" GSL_RNG_SEED=$1 ./exc $2 print_out
+
+gprof exc gmon.out > analysis.txt
+

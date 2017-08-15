@@ -16,8 +16,6 @@ T_age = 10**4
 def MaxRadius(M):
     return pow(3*M/(4 * pi * 200 * crit_density), 1/3)
 
-MpriMax = MaxRadius(Mprimary)
-
 def DFreeNFW(r, M):
     Rmax = MaxRadius(M)
     Rc = Rmax/c
