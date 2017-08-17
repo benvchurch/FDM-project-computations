@@ -35,7 +35,6 @@
 
 #define INTEGRATION_POINTS 81
 #define INTEGRAL_FUDGE_FACTOR 1.0125
-#define INTEGRATION_SECTIONS 8
 #define min(x,y) (x < y? x : y)
 #define sign(x) (x >= 0? 1.0 : -1.0)
 #define dot_macro(A, B) ((A).x * (B).x + (A).y * (B).y + (A).z * (B).z)
@@ -97,35 +96,8 @@ typedef struct
 	double R, theta, phi;
 	double cos_theta;
 	double M, r_core, r_max, alpha, beta, c, normalization;
-	double integs[INTEGRATION_SECTIONS];
 	vector v, position;
 } halo;
-
-double Power(double x, int y)
-{
-	if(y > 0)
-	{
-		double result = 1;
-		while(y > 0)
-		{
-			if(y % 2 == 0)
-			{
-				x = x*x;
-				y = y/2;
-			}
-			else
-			{
-				result = x*result;
-				y--;
-			}
-		}
-		return result;
-	}
-	else if(y < 0)
-		return 1/Power(x, -y);
-	else
-		return 1;
-}
 
 void print_vector(vector *A)
 {
@@ -196,15 +168,15 @@ double newton(double r)
     return x1;
 }
 
-double rho_profile_func(double x, void *params)
+/*double rho_profile(double x, void *params)
 {
 	double *param_ptr = (double *)params;
 	return pow(x, 2 - param_ptr[0])*pow((1 + x), param_ptr[0] - param_ptr[1]);
-}
+}*/
 
 double integ_profile(double alpha, double beta, double r)
 {
-	/*if(alpha > 3)
+	if(alpha > 3)
 		return 1;
 	double dist = 0, step = r/INTEGRATION_POINTS, sum = 0;
 	int i;
@@ -222,88 +194,25 @@ double integ_profile(double alpha, double beta, double r)
 		dist += step;
 	}
 
-	return 3.0*step/8.0*sum * INTEGRAL_FUDGE_FACTOR;*/
-	//printf("int %f\n", 3*step/8*sum);
+	return 3.0*step/8.0*sum * INTEGRAL_FUDGE_FACTOR;
 
+	/*printf("int %f\n", 3*step/8*sum);
+	double quick_result = 3.0*step/8.0*sum * INTEGRAL_FUDGE_FACTOR;
 	double result, error;
 	double arr[2];
 	arr[0] = alpha;
 	arr[1] = beta;
 
 	gsl_function F;
-	F.function = &rho_profile_func;
+	F.function = &rho_profile;
   	F.params = arr;
 
   	gsl_integration_qags (&F, 0, r, 0, 1e-7, 1000, w, &result, &error);
 	if(error/result > 1e-7)printf("LARGE INTEG ERROR WARNING %f for result %f", error, result);
 
-	//printf("alpha: %.3f beta: %.3f r: %.3f err %f\n", alpha, beta, r, (result - quick_result)/result);
+	printf("alpha: %.3f beta: %.3f r: %.3f err %f\n", alpha, beta, r, (result - quick_result)/result);
 
-	return result;
-}
-
-double worst_thing_ever(int lr, double a, double b, double r)
-{
-	switch(lr)
-	{
-		case -2: return pow(2,-2 + b)*pow(3,-4 + a - b)*(-20.25 - ((8*a*a*a + 12*a*a*(-2 + b) + b*(38 + (-15 + b)*b) +
-					2*a*(8 + 3*(-7 + b)*b))*(-0.0078125 + Power(1 - 2*r,4)/8.))/2. +
-					81*r - 27*(-6 + 2*a + b)*(0.1875 + (-1 + r)*r) + (3*(4*a*a + 4*a*(-4 + b) + (-9 + b)*(-2 + b))*(-1 + 4*r)*(7 + 4*r*(-5 + 4*r)))/32.);
-		break;
-
-		case -1: return (pow(2,-4 + a - b)*(-24 + 48*r - ((-2 + a + b)*(a*a + (-7 + b)*b + a*(-1 + 2*b))*(-3 + 2*r)*(-1 + 2*r)*(5 + 4*(-2 + r)*r))/64. -
-					3*(-4 + a + b)*(3 - 8*r + 4*r*r) + 6*(8 + a*a - 7*b + b*b + a*(-5 + 2*b))*(-0.2916666666666667 + (r*(3 + (-3 + r)*r))/3.)))/3.0;
-		break;
-
-		case 0: return pow(2,-4 - a)*pow(3,-4 + a - b)*(-(a*a*a*(-1 + Power(-2 + r,4))) -
-					16*(27 + (3*b)/4. + (b*b*b*(-1 + Power(-2 + r,4)))/2. + 40*b*r - 48*b*r*r - 27*r*r*r + 4*b*r*r*r +
-					(13*b*r*r*r*r)/4. - 3*b*b*(1 + Power(-2 + r,3)*r)) - 3*a*a*(-1 + r)*(-41 + 2*b*(-3 + r)*(5 + (-4 + r)*r) - r*(-23 + r + r*r)) -
-					2*a*(-1 + r)*(-75 + 6*b*b*(-3 + r)*(5 + (-4 + r)*r) + r*(-187 + r*(77 + r)) - 3*b*(37 + r*(5 + r*(-19 + 5*r)))));
-		break;
-
-		case 1: return  -(pow(2,-5 - 2*a)*pow(5,-3 + a - b)*(-2 + r)*(a*a*a*(-120 + 68*r - 14*r*r + r*r*r) +
-					a*a*(-1880 + 596*r - 38*r*r - 3*r*r*r + 12*b*(-120 + 68*r - 14*r*r + r*r*r)) +
-					2*a*(-2200 - 1932*r + 426*r*r + r*r*r + b*(-3920 + 344*r + 268*r*r - 42*r*r*r) + 24*b*b*(-120 + 68*r - 14*r*r + r*r*r)) +
-					8*(-500*(4 + 2*r + r*r) + 8*b*b*b*(-120 + 68*r - 14*r*r + r*r*r) - 4*b*b*(40 + 212*r - 86*r*r + 9*r*r*r) +
-					b*(-200 - 1892*r + 206*r*r + 31*r*r*r))))/3.0;
-		break;
-
-		case 2: return  pow(2,-4 - 3*a)*pow(3,-7 + 2*a - 2*b)*(-8957952 - ((-2 + a)*(-1 + a)*a + 8*(182 + 3*(-11 + a)*a)*b + 192*(-10 + a)*b*b + 512*b*b*b)*
-					(-64 + Power(-8 + r,4)/4.) + 2239488*r - 15552*(-18 + a + 8*b)*(48 - 16*r + r*r) +
-					72*(162 + a*a - 224*b + 64*b*b + a*(-19 + 16*b))*(-448 + r*(192 + (-24 + r)*r)));
-
-		break;
-
-		case 3: return (pow(2,-5 - 4*a)*pow(17,-3 + a - b)*(-965935104 - (a*a*a + a*a*(-3 + 48*b) + 32*b*(307 - 432*b + 128*b*b) + a*(2 - 912*b + 768*b*b))*
-					(-1024 + Power(-16 + r,4)/4.) + 120741888*r - 221952*(-34 + a + 16*b)*(192 - 32*r + r*r) +
-					272*(578 + a*a - 832*b + 256*b*b + a*(-35 + 32*b))*(-3584 + r*(768 + (-48 + r)*r))))/3.0;
-
-		break;
-
-		case 4: return pow(2,-6 - 5*a)*pow(33,-4 + a - b)*11*(-113048027136 -
-				(a*a*a + a*a*(-3 + 96*b) + 64*b*(1123 - 1632*b + 512*b*b) + a*(2 - 3360*b + 3072*b*b))*(-16384 + Power(-32 + r,4)/4.) + 7065501696*r -
-				3345408*(-66 + a + 32*b)*(768 - 64*r + r*r) + 1056*(2178 + a*a - 3200*b + 1024*b*b + a*(-67 + 64*b))*(-28672 + r*(3072 + (-96 + r)*r)));
-
-		break;
-
-		case 5: return (pow(2,-7 - 6*a)*pow(65,-3 + a - b)*
-     			(-13822328832000 + 431947776000*r - (((-2 + a)*(-1 + a)*a + 64*(8582 + 3*(-67 + a)*a)*b +
-            	12288*(-66 + a)*b*b + 262144*b*b*b)*(-96 + r)*(-32 + r)*
-          		(5120 + (-128 + r)*r))/4. - 51916800*(-130 + a + 64*b)*(3072 - 128*r + r*r) + 4160*(8450 + a*a - 12544*b + 4096*b*b + a*(-131 + 128*b))*
-        		(-229376 + r*(12288 + (-192 + r)*r))))/3.0;
-		break;
-	};
-
-	return 1;
-}
-
-double sec_integ_profile(halo *ptr, double r)
-{
-	double a = ptr->alpha, b = ptr->beta;
-	int lr = floor(log2(r)); //MAKE BETTER!
-	if(lr < -2) return pow(r, 3-a)*(1/(3-a) + r*(a-b)/(4-a) + (a*a - a + b - 2*a*b + b*b)/(5-a)*r*r/2.0);
-	if(lr >= INTEGRATION_SECTIONS - 2) return integ_profile(a, b, r); //MAKE BETTER
-	return ptr->integs[lr + 2] + worst_thing_ever(lr, a, b, r);
+	return 0.5*(result + quick_result);*/
 }
 
 double get_M()
@@ -324,17 +233,7 @@ void set_shape(halo *ptr, double M, double R)
 	ptr->beta = 3; //probalby need to change
 	ptr->c = gsl_ran_lognormal(RNG, log(c_bar(M)), 0.25); //Ludlow el. al. (2013) and  Frank van den Bosch
 	ptr->r_core = ptr->r_max/ptr->c;
-	int i;
-	double r = 1.0/4.0, a = ptr->alpha, b = ptr->beta;
-	ptr->integs[0] = pow(r, 3-a)*(1/(3-a) + r*(a-b)/(4-a) + (a*a - a + b - 2*a*b + b*b)/(5-a)*r*r/2.0);
-	r *= 2;
-	for(i = 0; i < INTEGRATION_SECTIONS - 1; i++)
-	{
-		ptr->integs[i + 1] = ptr->integs[i]  + worst_thing_ever(i - 2, ptr->alpha, ptr->beta, r);
-		r *= 2;
-	}
-	ptr->normalization = sec_integ_profile(ptr, ptr->c);
-
+	ptr->normalization = integ_profile(ptr->alpha, ptr->beta, ptr->c);
 }
 
 void set_velocity(halo *ptr, double R)
@@ -352,16 +251,7 @@ double enclosed_mass(halo *ptr, double r)
 	if(x > ptr->c)
 		return ptr->M;
 	else
-	{
-	/*	double sec = sec_integ_profile(ptr, x), integ = integ_profile(ptr->alpha, ptr->beta, x);
-		double lerr = log(fabs(sec - integ));
-		if(lerr > -4)
-		{
-			printf("alpha: %f beta: %f r: %f \n", ptr->alpha, ptr->beta, x);
-			printf("lerr: %f sec: %f real: %f r: \n", lerr, sec, integ);
-		}*/
-		return ptr->M * sec_integ_profile(ptr, x)/ptr->normalization;
-	}
+		return ptr->M * integ_profile(ptr->alpha, ptr->beta, x)/ptr->normalization;
 }
 
 

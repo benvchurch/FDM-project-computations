@@ -53,7 +53,7 @@ def FourierIntegral(k):
 interpolation_NUM = 1000
 
 interpolation_points_x = np.logspace(-10, 1, interpolation_NUM)
-interpolation_points_y = map(lambda k : 1/sqrt(pi) * (5.568327996831708 - float(meijerg([[1],[1]],[[1/2,1/2,1/2], [0]],k,1/2)))/k, interpolation_points_x)  
+interpolation_points_y = map(lambda k : 1/sqrt(4*pi) * (5.568327996831708 - float(meijerg([[1],[1]],[[1/2,1/2,1/2], [0]],k,1/2)))/k, interpolation_points_x)  
 interpolated_function = interpolate.interp1d(interpolation_points_x, interpolation_points_y, fill_value = 'extrapolate')
 
 def SqFourierIntegral(k):
