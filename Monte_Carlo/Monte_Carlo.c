@@ -76,7 +76,7 @@ typedef struct
 
 typedef struct
 {
-	double m, s;
+	double m, s, max_val;
 }data_cell;
 
 void update_cell(data_cell *ptr, double new_data, int k)
@@ -84,12 +84,14 @@ void update_cell(data_cell *ptr, double new_data, int k)
 	double old_m = ptr->m;
 	ptr->m += (new_data - old_m)/k;
 	ptr->s += (new_data - old_m)*(new_data - ptr->m);
+	if(ptr->max_val < new_data) ptr->max_val = new_data;
 }
 
 void reset_cell(data_cell *ptr)
 {
 	ptr->m = 0;
 	ptr->s = 0;
+	ptr->max_val = 0;
 }
 
 typedef struct
@@ -520,8 +522,8 @@ void print_to_file(char *name, double *Ds, data_cell *data)
 		for(j = 0; j < num_points; j++)
 		{
 			double sig = std_err_mean(data[j].s)/data[j].m/log(10);
-			if(data[j].m != 0 && sig < 10)
-				fprintf(f, "%f %f %f\n", log10(Ds[j]), log10(data[j].m), sig);
+			if(data[j].m > 0 && sig < 100)
+				fprintf(f, "%f %f %f %f\n", log10(Ds[j]), log10(data[j].m), sig, log10(data[j].max_val));
 		}
 		fclose(f);
 	}
