@@ -13,6 +13,5 @@ gcc -L/usr/local/lib/gsl "Monte_Carlo.c" -lgsl -lgslcblas -lm -o exc
 
 LD_LIBRARY_PATH=/usr/local/lib/gsl GSL_RNG_TYPE="taus" GSL_RNG_SEED=$1 ./exc $2
 
-python plots.py $1 $2
 
 
