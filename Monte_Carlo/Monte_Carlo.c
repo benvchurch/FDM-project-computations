@@ -408,7 +408,7 @@ halo *make_halo(halo *ptr)
 	ptr->phi = 2*pi*gsl_rng_uniform(RNG);
 	assign_vec(ptr->position, ptr->R * sin(ptr->theta) * cos(ptr->phi), ptr->R * sin(ptr->theta) * sin(ptr->phi), ptr->R * ptr->cos_theta);
 
-	ptr->M = 1E10; // get_M();
+	ptr->M = 1E9; // get_M();
 	set_shape(ptr, ptr->M, ptr->R);
 	set_velocity(ptr, ptr->R);
 	//truncate(ptr, ptr->R); //REMOVE THIS!!
