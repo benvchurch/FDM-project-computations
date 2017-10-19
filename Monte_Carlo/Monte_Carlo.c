@@ -350,7 +350,7 @@ void set_velocity(halo *ptr, double R)
 
 double enclosed_mass(halo *ptr, double r)
 {
-	return ptr->m; //DEBUGING BULLSHIT
+	return ptr->M; //DEBUGING BULLSHIT
 
 	double x = r/(ptr->r_core);
 	if(x > ptr->c)
