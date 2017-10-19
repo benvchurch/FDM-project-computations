@@ -350,8 +350,6 @@ void set_velocity(halo *ptr, double R)
 
 double enclosed_mass(halo *ptr, double r)
 {
-	return ptr->m; //DEBUGING BULLSHIT
-
 	double x = r/(ptr->r_core);
 	if(x > ptr->c)
 		return ptr->M;
@@ -402,16 +400,16 @@ void truncate(halo *ptr, double R)
 
 halo *make_halo(halo *ptr)
 {
-	ptr->R = gsl_rng_uniform(RNG) * R_core_prim; // newton(gsl_rng_uniform(RNG)) * R_core_prim; //CHANGE THIS MOTHERFUCKER!
+	ptr->R = newton(gsl_rng_uniform(RNG)) * R_core_prim;
 	ptr->cos_theta = 2*gsl_rng_uniform(RNG) - 1;
 	ptr->theta = acos(ptr->cos_theta);
 	ptr->phi = 2*pi*gsl_rng_uniform(RNG);
 	assign_vec(ptr->position, ptr->R * sin(ptr->theta) * cos(ptr->phi), ptr->R * sin(ptr->theta) * sin(ptr->phi), ptr->R * ptr->cos_theta);
 
-	ptr->M = 1E10; // get_M();
+	ptr->M = get_M();
 	set_shape(ptr, ptr->M, ptr->R);
 	set_velocity(ptr, ptr->R);
-	//truncate(ptr, ptr->R); //REMOVE THIS!!
+	truncate(ptr, ptr->R);
 
 	return ptr;
 }
