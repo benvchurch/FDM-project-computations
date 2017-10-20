@@ -437,7 +437,7 @@ double Fluc(halo *halos, int num_halos, double D)
 		make_unit(diff)
 		double v_r = dot_macro(halos[i].v, diff);
 
-		sum += r < CUTOFF_SCALE ? (enclosed_mass(halos + i, r) * G /(r*r) * v_r) : 0;
+		sum += ((r > CUTOFF_SCALE) ? (enclosed_mass(halos + i, r) * G /(r*r) * v_r) : 0);
 		/*printf("%.3f\n", D);
 		printf("velocity: ");
 		print_vector(halos[i]->v);
