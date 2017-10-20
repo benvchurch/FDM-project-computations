@@ -590,8 +590,8 @@ int main(int argc, char **argv)
 
 		for(j = 0; j < num_points; j++)
 		{
-			update_cell(Flucs + j, Fluc(halolist, num_halos, Ds[j]), j + 1);
-			update_cell(Dens + j, (j == 0 ? H_Density(halolist, num_halos, Ds[j], Ds[j]) : H_Density(halolist, num_halos, Ds[j], Ds[j] - Ds[j-1])), j + 1);
+			update_cell(Flucs + j, Fluc(halolist, num_halos, Ds[j]), i + 1);
+			update_cell(Dens + j, (j == 0 ? H_Density(halolist, num_halos, Ds[j], Ds[j]) : H_Density(halolist, num_halos, Ds[j], Ds[j] - Ds[j-1])), i + 1);
 		}
 		//printf("Mass frac: %f \n", mass/M_prim);
 		avg_mass += mass/num_trials;
