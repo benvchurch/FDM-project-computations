@@ -36,7 +36,7 @@
 #define INTEGRATION_POINTS 81
 #define INTEGRAL_FUDGE_FACTOR 1.0125
 #define INTEGRATION_SECTIONS 8
-#define CUTOFF_SCALE 0.1
+#define CUTOFF_SCALE 0
 #define min(x,y) (x < y? x : y)
 #define sign(x) (x >= 0? 1.0 : -1.0)
 #define dot_macro(A, B) ((A).x * (B).x + (A).y * (B).y + (A).z * (B).z)
@@ -410,7 +410,7 @@ halo *make_halo(halo *ptr)
 	ptr->M = get_M();
 	set_shape(ptr, ptr->M, ptr->R);
 	set_velocity(ptr, ptr->R);
-	truncate(ptr, ptr->R); //REMOVE THIS!!
+	truncate(ptr, ptr->R);
 
 	return ptr;
 }
