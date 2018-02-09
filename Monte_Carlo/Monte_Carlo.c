@@ -83,7 +83,7 @@ typedef struct
 void update_cell(data_cell *ptr, double new_data, int k)
 {
 	double old_m = ptr->m;
-	ptr->m += (new_data - old_m)/k;
+	ptr->m += (new_data - old_m)/(double) k;
 	ptr->s += (new_data - old_m)*(new_data - ptr->m);
 	if(ptr->max_val < new_data) ptr->max_val = new_data;
 }
@@ -528,6 +528,7 @@ void print_to_file(char *name, double *Ds, data_cell *data)
 		for(j = 0; j < num_points; j++)
 		{
 			double sig = std_err_mean(data[j].s)/data[j].m/log(10);
+			printf("%d, %d, %d, %d,\n", data[j].m, data[j].s, stg, log10(data[j].m));
 			if(data[j].m > 0)
 				fprintf(f, "%f %f %f %f\n", log10(Ds[j]), log10(data[j].m), sig, log10(data[j].max_val));
 		}
@@ -538,6 +539,7 @@ void print_to_file(char *name, double *Ds, data_cell *data)
 		for(j = 0; j < num_points; j++)
 		{
 			double sig = std_err_mean(data[j].s)/data[j].m/log(10);
+			printf("%d, %d, %d, %d,\n", data[j].m, data[j].s, stg, log10(data[j].m));
 			if(data[j].m != 0)
 				printf("%f : %f +/- %f\n", log10(Ds[j]), log10(data[j].m), sig);
 		}
