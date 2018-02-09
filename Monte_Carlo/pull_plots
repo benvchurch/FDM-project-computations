@@ -1,0 +1,19 @@
+#!/bin/bash
+
+if [ ! -d ../../Results/Monte_Carlo ]; then
+  mkdir -p ../../Results/Monte_Carlo;
+fi
+
+if [ ! -d data_files ]; then
+  mkdir -p data_files;
+fi
+
+scp -r benc@71.183.83.148:~/Documents/FDM_Project/project-eva/Monte_Carlo/data_files ~/Documents/FDM_Project/project-eva/Monte_Carlo/ 
+
+for i in $(ls data_files)
+do
+    python plots.py $i
+done
+
+
+

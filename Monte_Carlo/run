@@ -4,10 +4,6 @@ if [ ! -d data_files ]; then
   mkdir -p data_files;
 fi
 
-if [ ! -d ../../Results/Monte_Carlo ]; then
-  mkdir -p ../../Results/Monte_Carlo;
-fi
-
 
 gcc -L/usr/local/lib/gsl "Monte_Carlo.c" -lgsl -lgslcblas -lm -o exc
 

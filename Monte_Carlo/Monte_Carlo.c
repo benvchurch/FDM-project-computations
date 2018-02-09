@@ -420,7 +420,6 @@ void print_halo_basic(halo *ptr)
 	printf("\n R = %3f \n theta = %3f \n M = %3f \n", ptr->R, ptr->theta, ptr->M);
 }
 
-
 double Fluc(halo *halos, int num_halos, double D)
 {
 	double sum = 0;
@@ -435,7 +434,12 @@ double Fluc(halo *halos, int num_halos, double D)
 		make_unit(diff)
 		double v_r = dot_macro(halos[i].v, diff);
 
-		sum += ((r > CUTOFF_SCALE) ? (enclosed_mass(halos + i, r) * G /(r*r) * v_r) : 0);
+		double produced_fluc = ((r > CUTOFF_SCALE) ? (enclosed_mass(halos + i, r) * G /(r*r) * v_r) : 0);
+
+		// kill heating which is adiabtic
+		double natural_fluc = 2 * pi* pow(D, 3.0/2.0)/sqrt(MFreeNFW(D) * G) * 1/(PhiFreeNFW(D));
+		if(produced_fluc/natural_fluc > 1)
+			sum += produced_fluc;
 		/*printf("%.3f\n", D);
 		printf("velocity: ");
 		print_vector(halos[i]->v);

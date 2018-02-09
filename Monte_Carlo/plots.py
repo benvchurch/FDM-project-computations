@@ -45,26 +45,16 @@ def readData(fileName):
     return map(get_coord, [0, 1, 2])
 
 def main():
-    Dens_x, Dens_y, Dens_errs = readData("data_files/Density" + sys.argv[1] + '_' + sys.argv[2] + ".txt")
-    Flucs_x, Flucs_y, Flucs_errs = readData("data_files/Flucs" + sys.argv[1] + '_' + sys.argv[2] + ".txt")
+    x,y, errs = readData("data_files/" + sys.argv[1])
 
-    filter_func = lambda d : lowess(d, Dens_x, is_sorted = False, frac = 0.2, it = 0)
+    filter_func = lambda d : lowess(d, x, is_sorted = False, frac = 0.2, it = 0)
 
     plt.figure()
-    plt.loglog(filter_func(Dens_y)[:,0], filter_func(Dens_y)[:,1])
-    plt.fill_between(filter_func(Dens_y / Dens_errs)[:,0], filter_func(Dens_y / Dens_errs)[:,1], filter_func(Dens_y * Dens_errs)[:,1],  alpha = 0.5,  edgecolor='#1B2ACC', facecolor='#089FFF', linewidth = 2)
+    plt.loglog(filter_func(y)[:,0], filter_func(y)[:,1])
+    plt.fill_between(filter_func(y / errs)[:,0], filter_func(y / errs)[:,1], filter_func(y * errs)[:,1],  alpha = 0.5,  edgecolor='#1B2ACC', facecolor='#089FFF', linewidth = 2)
     plt.xlabel(r'$ r(pc)$')
     plt.ylabel(r'$ \rho \quad (M_{\odot} pc^{-3})$')
-    plt.savefig('../../Results/Monte_Carlo/Density' + sys.argv[1] + '_' + sys.argv[2] + '.png')
-
-    filter_func = lambda d : lowess(d, Flucs_x, is_sorted = False, frac = 0.2, it = 0)
-
-    plt.figure()
-    plt.loglog(filter_func(Flucs_y)[:,0], filter_func(Flucs_y)[:,1])
-    plt.fill_between(filter_func(Flucs_y / Flucs_errs)[:,0], filter_func(Flucs_y / Flucs_errs)[:,1], filter_func(Flucs_y * Flucs_errs)[:,1],  alpha = 0.5,  edgecolor='#1B2ACC', facecolor='#089FFF', linewidth = 2)
-    plt.xlabel(r'$ r(pc)$')
-    plt.ylabel(r'$ \sqrt{\left < \left (\frac{\partial \phi}{\partial t} \right )^2 \right >} \quad ((km/s)^{2} Myr^{-1})$')
-    plt.savefig('../../Results/Monte_Carlo/Flucs' + sys.argv[1] + '_' + sys.argv[2] + '.png')
+    plt.savefig('../../Results/Monte_Carlo/' + sys.argv[1].split(".")[0])
 
 if __name__ == "__main__":
 	main()
