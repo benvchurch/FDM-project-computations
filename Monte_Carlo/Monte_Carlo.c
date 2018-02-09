@@ -558,7 +558,7 @@ int main(int argc, char **argv)
 
 	for(i = 0; i < num_points; i++)
 	{
-		Ds[i] = pow(10, 5.0*i/num_points);
+		Ds[i] = pow(10, 5.0*i/(double) num_points);
 		reset_cell(&Flucs[i]);
 		reset_cell(&Dens[i]);
 	}
