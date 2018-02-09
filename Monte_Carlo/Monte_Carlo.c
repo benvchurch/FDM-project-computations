@@ -540,7 +540,7 @@ void print_to_file(char *name, double *Ds, data_cell *data)
 		{
 			double sig = std_err_mean(data[j].s)/data[j].m/log(10);
 			printf("%f, %f, %f, %f,\n", data[j].m, data[j].s, sig, log10(data[j].m));
-			if(data[j].m != 0)
+			if(data[j].m > 0)
 				printf("%f : %f +/- %f\n", log10(Ds[j]), log10(data[j].m), sig);
 		}
 	}
