@@ -435,7 +435,7 @@ double Fluc(halo *halos, int num_halos, double D)
 		double v_r = dot_macro(halos[i].v, diff);
 
 		double produced_fluc = ((r > CUTOFF_SCALE) ? (enclosed_mass(halos + i, r) * G /(r*r) * v_r) : 0);
-
+		sum = produced_fluc //KILLEM
 		// kill heating which is adiabtic
 		/*double natural_fluc = 2 * pi* pow(D, 3.0/2.0)/sqrt(MFreeNFW(D) * G) * 1/(PhiFreeNFW(D));
 		if(produced_fluc/natural_fluc > 1)
@@ -528,7 +528,7 @@ void print_to_file(char *name, double *Ds, data_cell *data)
 		for(j = 0; j < num_points; j++)
 		{
 			double sig = std_err_mean(data[j].s)/data[j].m/log(10);
-			printf("%d, %d, %d, %d,\n", data[j].m, data[j].s, stg, log10(data[j].m));
+			printf("%f, %f, %f, %fs,\n", data[j].m, data[j].s, sig, log10(data[j].m));
 			if(data[j].m > 0)
 				fprintf(f, "%f %f %f %f\n", log10(Ds[j]), log10(data[j].m), sig, log10(data[j].max_val));
 		}
@@ -539,7 +539,7 @@ void print_to_file(char *name, double *Ds, data_cell *data)
 		for(j = 0; j < num_points; j++)
 		{
 			double sig = std_err_mean(data[j].s)/data[j].m/log(10);
-			printf("%d, %d, %d, %d,\n", data[j].m, data[j].s, stg, log10(data[j].m));
+			printf("%f, %f, %f, %f,\n", data[j].m, data[j].s, sig, log10(data[j].m));
 			if(data[j].m != 0)
 				printf("%f : %f +/- %f\n", log10(Ds[j]), log10(data[j].m), sig);
 		}
@@ -610,7 +610,7 @@ int main(int argc, char **argv)
 
 	}
 	print_to_file("Density", Ds, Dens);
-	sq_root_data(Flucs, num_points);
+	//sq_root_data(Flucs, num_points);
 	print_to_file("Flucs", Ds, Flucs);
 
 	printf("Mass frac: %f \n", avg_mass/M_prim);
