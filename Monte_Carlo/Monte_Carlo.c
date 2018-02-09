@@ -36,7 +36,7 @@
 #define INTEGRATION_POINTS 81
 #define INTEGRAL_FUDGE_FACTOR 1.0125
 #define INTEGRATION_SECTIONS 8
-#define CUTOFF_SCALE 0
+#define CUTOFF_SCALE 1E3
 #define min(x,y) (x < y? x : y)
 #define sign(x) (x >= 0? 1.0 : -1.0)
 #define dot_macro(A, B) ((A).x * (B).x + (A).y * (B).y + (A).z * (B).z)
@@ -425,6 +425,7 @@ double Fluc(halo *halos, int num_halos, double D)
 	double sum = 0;
 	int i;
 	vector my_pos = {0, 0, D}, diff;
+	double natural_fluc = 2 * pi* pow(D, 3.0/2.0)/sqrt(MFreeNFW(D) * G) * 1/(PhiFreeNFW(D));
 	for(i = 0; i < num_halos; i++)
 	{
 		double R = halos[i].R;
@@ -435,12 +436,12 @@ double Fluc(halo *halos, int num_halos, double D)
 		double v_r = dot_macro(halos[i].v, diff);
 
 		double produced_fluc = ((r > CUTOFF_SCALE) ? (enclosed_mass(halos + i, r) * G /(r*r) * v_r) : 0);
-		sum += produced_fluc; //KILLEM
+		//sum += produced_fluc; //KILLEM
 		// kill heating which is adiabtic
-		/*double natural_fluc = 2 * pi* pow(D, 3.0/2.0)/sqrt(MFreeNFW(D) * G) * 1/(PhiFreeNFW(D));
+
 		if(produced_fluc/natural_fluc > 1)
 			sum += produced_fluc;
-		printf("%.3f\n", D);
+		/*printf("%.3f\n", D);
 		printf("velocity: ");
 		print_vector(halos[i]->v);
 		printf("position ");
@@ -501,7 +502,7 @@ void sq_root_data(data_cell *data, int num)
 	for(i = 0; i < num; i++)
 	{
 		data[i].m = sqrt(data[i].m);
-		data[i].s *= 1.0/(2.0*data[i].m);
+		data[i].s *= pow(1.0/(2.0*data[i].m), 2);
 		data[i].max_val = sqrt(data[i].max_val);
 	}
 }
@@ -528,7 +529,7 @@ void print_to_file(char *name, double *Ds, data_cell *data)
 		for(j = 0; j < num_points; j++)
 		{
 			double sig = std_err_mean(data[j].s)/data[j].m/log(10);
-			printf("%f, %f, %f, %fs,\n", data[j].m, data[j].s, sig, log10(data[j].m));
+			printf("%f, %f, %f, %f\n", data[j].m, data[j].s, sig, log10(data[j].m));
 			if(data[j].m > 0)
 				fprintf(f, "%f %f %f %f\n", log10(Ds[j]), log10(data[j].m), sig, log10(data[j].max_val));
 		}
@@ -539,7 +540,7 @@ void print_to_file(char *name, double *Ds, data_cell *data)
 		for(j = 0; j < num_points; j++)
 		{
 			double sig = std_err_mean(data[j].s)/data[j].m/log(10);
-			printf("%f, %f, %f, %f,\n", data[j].m, data[j].s, sig, log10(data[j].m));
+			printf("%f, %f, %f, %f\n", data[j].m, data[j].s, sig, log10(data[j].m));
 			if(data[j].m > 0)
 				printf("%f : %f +/- %f\n", log10(Ds[j]), log10(data[j].m), sig);
 		}
