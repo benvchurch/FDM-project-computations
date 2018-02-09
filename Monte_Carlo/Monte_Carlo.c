@@ -56,7 +56,7 @@ int num_trials, num_points = 100;
 const double pi = 3.14159265;
 double crit_density = 1.3211775E-7,
 	f = 0.1,
-	g = 1E-4,
+	g = 1E-3,
 	p = 1.9,
 	G = 0.0045,
 	k = 2,
@@ -401,7 +401,7 @@ void truncate(halo *ptr, double R)
 
 halo *make_halo(halo *ptr)
 {
-	ptr->R = gsl_rng_uniform(RNG) * R_core_prim; // newton(gsl_rng_uniform(RNG)) * R_core_prim; //CHANGE THIS MOTHERFUCKER!
+	ptr->R = newton(gsl_rng_uniform(RNG)) * R_core_prim;
 	ptr->cos_theta = 2*gsl_rng_uniform(RNG) - 1;
 	ptr->theta = acos(ptr->cos_theta);
 	ptr->phi = 2*pi*gsl_rng_uniform(RNG);
@@ -488,7 +488,7 @@ void init(int argc, char **argv)
 
 double std_err_mean(double sum_of_squares)
 {
-	return sqrt(sum_of_squares/(num_trials*(num_trials - 1)));
+	return sqrt(sum_of_squares/((double) num_trials*(num_trials - 1)));
 }
 
 void sq_root_data(data_cell *data, int num)
@@ -498,6 +498,7 @@ void sq_root_data(data_cell *data, int num)
 	{
 		data[i].m = sqrt(data[i].m);
 		data[i].s *= 1.0/(2.0*data[i].m);
+		data[i].max_val = sqrt(data[i].max_val);
 	}
 }
 
@@ -523,7 +524,7 @@ void print_to_file(char *name, double *Ds, data_cell *data)
 		for(j = 0; j < num_points; j++)
 		{
 			double sig = std_err_mean(data[j].s)/data[j].m/log(10);
-			if(data[j].m > 0 && sig < 100)
+			if(data[j].m > 0)
 				fprintf(f, "%f %f %f %f\n", log10(Ds[j]), log10(data[j].m), sig, log10(data[j].max_val));
 		}
 		fclose(f);
@@ -533,7 +534,7 @@ void print_to_file(char *name, double *Ds, data_cell *data)
 		for(j = 0; j < num_points; j++)
 		{
 			double sig = std_err_mean(data[j].s)/data[j].m/log(10);
-			if(data[j].m != 0 && sig < 10)
+			if(data[j].m != 0)
 				printf("%f : %f +/- %f\n", log10(Ds[j]), log10(data[j].m), sig);
 		}
 	}

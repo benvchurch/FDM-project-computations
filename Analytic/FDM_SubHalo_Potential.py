@@ -9,7 +9,7 @@ import hmf_module_sharpk as modhmf
 import hmf_module_sharpk_analyt as modhmf_a
 
 m22 = 1
-ksol = 2.2944716 * 10**12
+ksol = 7.2978749 * 10**11
 
 def cutoff(axion_mass):
     return 10**8.7 * pow(axion_mass, -3/2)
@@ -18,7 +18,7 @@ def SolitonMass(M):
     return 2.7 * 10**8 / m22 * pow(M/10**10, 1/3)
     
 def SolitonRadius(M):
-    return 33*pi**2/1024 * ksol/ SolitonMass(M) * m22**-2
+    return ksol / SolitonMass(M) * m22**-2
     
 def SolitonHalfRadius(M):
 	return SolitonRadius(M)*sqrt(pow(2,1/8)-1)
@@ -26,7 +26,7 @@ def SolitonHalfRadius(M):
 def SolitonProfile(r, M):
     Msol = SolitonMass(M)
     R = SolitonRadius(M)
-    return ksol * m22**-2 * (1/R)**4/(1+(r/R)**2)**8
+    return 1024/(33 * pi**2) * ksol * m22**-2 * (1/R)**4/(1+(r/R)**2)**8
 
 def SolitonMassProfile(r, M):
     Msol = SolitonMass(M)

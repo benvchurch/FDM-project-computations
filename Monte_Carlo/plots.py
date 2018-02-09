@@ -11,20 +11,7 @@ from statsmodels.nonparametric.smoothers_lowess import lowess
 
 
 params = {
-   'axes.labelsize': 24,
-   'axes.titlesize': 22,
-   'legend.fontsize': 20,
-   'xtick.labelsize': 24,
-   'ytick.labelsize': 24,
-   'text.usetex': True,
-   'figure.figsize': [10,8], # instead of 4.5, 4.5
-   'lines.linewidth': 2,
-   'xtick.major.pad': 15,
-   'ytick.major.pad': 15,
-   'figure.subplot.bottom': 0.12,
-   'figure.subplot.top': 0.95,
-   'figure.subplot.left': 0.225,
-   #'font.size': 22
+   'text.usetex': True
    }
 plt.rcParams.update(params)
 
@@ -55,7 +42,7 @@ def main():
     plt.fill_between(filter_func(Dens_y / Dens_errs)[:,0], filter_func(Dens_y / Dens_errs)[:,1], filter_func(Dens_y * Dens_errs)[:,1],  alpha = 0.5,  edgecolor='#1B2ACC', facecolor='#089FFF', linewidth = 2)
     plt.xlabel(r'$ r(pc)$')
     plt.ylabel(r'$ \rho \quad (M_{\odot} pc^{-3})$')
-    plt.savefig('../../Results/Monte_Carlo/Density' + sys.argv[1] + '_' + sys.argv[2] + '.png')
+    plt.savefig('../../Results/Monte_Carlo/Density' + sys.argv[1] + '_' + sys.argv[2] + '.pdf')
 
     filter_func = lambda d : lowess(d, Flucs_x, is_sorted = False, frac = 0.2, it = 0)
 
@@ -64,7 +51,7 @@ def main():
     plt.fill_between(filter_func(Flucs_y / Flucs_errs)[:,0], filter_func(Flucs_y / Flucs_errs)[:,1], filter_func(Flucs_y * Flucs_errs)[:,1],  alpha = 0.5,  edgecolor='#1B2ACC', facecolor='#089FFF', linewidth = 2)
     plt.xlabel(r'$ r(pc)$')
     plt.ylabel(r'$ \sqrt{\left < \left (\frac{\partial \phi}{\partial t} \right )^2 \right >} \quad ((km/s)^{2} Myr^{-1})$')
-    plt.savefig('../../Results/Monte_Carlo/Flucs' + sys.argv[1] + '_' + sys.argv[2] + '.png')
+    plt.savefig('../../Results/Monte_Carlo/Flucs' + sys.argv[1] + '_' + sys.argv[2] + '.pdf')
 
 if __name__ == "__main__":
 	main()

@@ -9,7 +9,7 @@ if [ ! -d ../../Results/Monte_Carlo ]; then
 fi
 
 
-gcc -L/usr/local/lib/gsl "Monte_Carlo.c" -lgsl -lgslcblas -lm -o exc
+gcc -L/usr/local/lib/gsl "Teste_Carlo.c" -lgsl -lgslcblas -lm -o exc
 
 LD_LIBRARY_PATH=/usr/local/lib/gsl GSL_RNG_TYPE="taus" GSL_RNG_SEED=$1 ./exc $2
 
