@@ -437,10 +437,10 @@ double Fluc(halo *halos, int num_halos, double D)
 		double produced_fluc = ((r > CUTOFF_SCALE) ? (enclosed_mass(halos + i, r) * G /(r*r) * v_r) : 0);
 
 		// kill heating which is adiabtic
-		double natural_fluc = 2 * pi* pow(D, 3.0/2.0)/sqrt(MFreeNFW(D) * G) * 1/(PhiFreeNFW(D));
+		/*double natural_fluc = 2 * pi* pow(D, 3.0/2.0)/sqrt(MFreeNFW(D) * G) * 1/(PhiFreeNFW(D));
 		if(produced_fluc/natural_fluc > 1)
 			sum += produced_fluc;
-		/*printf("%.3f\n", D);
+		printf("%.3f\n", D);
 		printf("velocity: ");
 		print_vector(halos[i]->v);
 		printf("position ");
