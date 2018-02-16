@@ -463,7 +463,7 @@ double Fluc_mass_range(halo *halos, int num_halos, double D, double min_mass, do
 	{
 		double R = halos[i].R;
 		double r = sqrt(R*R + D*D - 2.0*R*D*halos[i].cos_theta);
-		if(halos[i].m < max_mass && halos[i].m > min_mass)
+		if(halos[i].M < max_mass && halos[i].M > min_mass)
 		{
 			assign_vec_diff(diff, halos[i].position, my_pos);
 			make_unit(diff)
