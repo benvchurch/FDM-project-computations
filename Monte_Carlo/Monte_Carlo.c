@@ -661,7 +661,7 @@ int main(int argc, char **argv)
 	printf("Mass frac: %f \n", avg_mass/M_prim);
 	sq_root_data(Hist_Flucs, hist_num);
 	for(int i = 0; i < hist_num; i++)
-		printf("Mass: %f Fluc: %f SDEV: %f\n", M_prim*g*pow(f/g, (double) i/ (double) hist_num), Hist_Flucs[i].m, Hist_Flucs[j].s);
+		printf("Mass: %f Fluc: %f SDEV: %f\n", M_prim*g*pow(f/g, (double) i/ (double) hist_num), Hist_Flucs[i].m, std_err_mean(Hist_Flucs[i].s));
 	gsl_rng_free (RNG);
 	gsl_integration_workspace_free (w);
 	return 0;
