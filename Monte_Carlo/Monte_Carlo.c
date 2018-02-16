@@ -642,8 +642,8 @@ int main(int argc, char **argv)
 		//printf("Mass frac: %f \n", mass/M_prim);
 		avg_mass += mass/num_trials;
 
-		for(int i = 0; i < hist_num; i++)
-			update_cell(Hist_Flucs + i, Fluc_mass_range(halolist, num_halos, 1e5, M_prim*g*pow(f/g, (double) i/ (double) hist_num), M_prim*g*pow(f/g, (double) (i + 1)/ (double) hist_num)), i + 1);
+		for(int j = 0; j < hist_num; j++)
+			update_cell(Hist_Flucs + j, Fluc_mass_range(halolist, num_halos, 1e4, M_prim*g*pow(f/g, (double) j/ (double) hist_num), M_prim*g*pow(f/g, (double) (j + 1)/ (double) hist_num)), i + 1);
 
 
 		/*for(j = 0; j < num_points; j++)
