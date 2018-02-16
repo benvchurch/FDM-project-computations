@@ -641,6 +641,7 @@ int main(int argc, char **argv)
 		}
 		//printf("Mass frac: %f \n", mass/M_prim);
 		avg_mass += mass/num_trials;
+
 		for(int i = 0; i < hist_num; i++)
 			update_cell(Hist_Flucs + i, Fluc_mass_range(halolist, num_halos, 1e5, M_prim*g*pow(f/g, (double) i/ (double) hist_num), M_prim*g*pow(f/g, (double) (i + 1)/ (double) hist_num)), i + 1);
 
@@ -658,7 +659,7 @@ int main(int argc, char **argv)
 	print_to_file("Flucs", Ds, Flucs);
 
 	printf("Mass frac: %f \n", avg_mass/M_prim);
-	sq_root_data(Fluc_mass_range, hist_num);
+	sq_root_data(Hist_Flucs, hist_num);
 	for(int i = 0; i < hist_num; i++)
 		printf("Mass: %f Fluc: %f SDEV: %f\n", M_prim*g*pow(f/g, (double) i/ (double) hist_num), Hist_Flucs[i].m, std_err_mean(Hist_Flucs[j].s));
 	gsl_rng_free (RNG);
